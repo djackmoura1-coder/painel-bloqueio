@@ -1,24 +1,27 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 from datetime import date
-import os
-
-arquivo = "dados_pedidos.xlsx"
-
-if not os.path.exists(arquivo):
-    df = pd.DataFrame(columns=[
-        "Data",
-        "Responsavel",
-        "Rastreio",
-        "Motivo",
-        "Status",
-        "Resultado"
-    ])
-    df.to_excel(arquivo, index=False)
-
-df = pd.read_excel(arquivo)
 
 st.title("Solicitar Bloqueio de Pedido")
+
+# CONEXÃO COM GOOGLE SHEETS
+
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"], scopes=scope
+)
+
+client = gspread.authorize(credentials)
+
+sheet = client.open("painel-bloqueio").sheet1
+
+# FORMULÁRIO
 
 data = st.date_input("Data", value=date.today())
 
@@ -30,17 +33,13 @@ motivo = st.text_area("Motivo do bloqueio")
 
 if st.button("Enviar solicitação"):
 
-    novo = pd.DataFrame({
-        "Data": [data],
-        "Responsavel": [responsavel],
-        "Rastreio": [rastreio],
-        "Motivo": [motivo],
-        "Status": ["Pendente"],
-        "Resultado": [""]
-    })
+    sheet.append_row([
+        str(data),
+        responsavel,
+        rastreio,
+        motivo,
+        "Pendente",
+        ""
+    ])
 
-    df = pd.concat([df, novo], ignore_index=True)
-
-    df.to_excel(arquivo, index=False)
-
-    st.success("Solicitação enviada!")
+    st.success("Solicitação enviada com sucesso!")
