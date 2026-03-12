@@ -14,7 +14,7 @@ scope = [
 ]
 
 credentials = Credentials.from_service_account_info(
-    json.loads(st.secrets["gcp_service_account"]),
+    st.secrets["gcp_service_account"],
     scopes=scope
 )
 
