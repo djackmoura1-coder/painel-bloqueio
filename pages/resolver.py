@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 import gspread
+import json
 from google.oauth2.service_account import Credentials
+
+st.title("🔧 Resolver Solicitações de Bloqueio")
 
 # CONEXÃO COM GOOGLE SHEETS
 
@@ -11,30 +14,24 @@ scope = [
 ]
 
 credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"], scopes=scope
+    json.loads(st.secrets["gcp_service_account"]),
+    scopes=scope
 )
 
 client = gspread.authorize(credentials)
 
 sheet = client.open_by_key(
-    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao").get_worksheet(0)
+    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
+).sheet1
 
 # LER DADOS
 
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
-# GARANTIR QUE EXISTEM COLUNAS
-
 if df.empty:
-    df = pd.DataFrame(columns=[
-        "Data",
-        "Responsavel",
-        "Rastreio",
-        "Motivo",
-        "Status",
-        "Resultado"
-    ])
+    st.info("Nenhuma ocorrência registrada ainda.")
+    st.stop()
 
 # MÉTRICAS
 
@@ -50,11 +47,9 @@ col2.metric("Pendentes 🟡", pendentes)
 col3.metric("Bloqueados 🟢", bloqueados)
 col4.metric("Não bloqueados 🔴", nao_bloqueados)
 
-st.title("Resolver Solicitações de Bloqueio")
-
 # BUSCA
 
-st.subheader("Buscar ocorrência")
+st.subheader("🔎 Buscar ocorrência")
 
 busca = st.text_input("Buscar pelo rastreio")
 
@@ -62,17 +57,17 @@ if busca:
     resultado_busca = df[df["Rastreio"].astype(str).str.contains(busca)]
     st.dataframe(resultado_busca, use_container_width=True)
 
-# SELECIONAR OCORRÊNCIA
+# RESOLVER OCORRÊNCIA
 
-st.subheader("Selecionar ocorrência para resolver")
+st.subheader("Resolver ocorrência")
 
-pendentes = df[df["Status"] == "Pendente"]
+pendentes_df = df[df["Status"] == "Pendente"]
 
-if not pendentes.empty:
+if not pendentes_df.empty:
 
     rastreio = st.selectbox(
         "Selecionar rastreio",
-        pendentes["Rastreio"]
+        pendentes_df["Rastreio"]
     )
 
     resultado = st.radio(
@@ -85,16 +80,18 @@ if not pendentes.empty:
         df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
         df.loc[df["Rastreio"] == rastreio, "Resultado"] = resultado
 
-        sheet.update([df.columns.values.tolist()] + df.values.tolist())
+        sheet.update(
+            [df.columns.values.tolist()] + df.values.tolist()
+        )
 
-        st.success("Ocorrência finalizada!")
+        st.success("✅ Ocorrência finalizada!")
 
 else:
     st.info("Não existem ocorrências pendentes.")
 
 # HISTÓRICO
 
-st.subheader("Histórico de ocorrências")
+st.subheader("📊 Histórico de ocorrências")
 
 
 def status_color(row):
@@ -113,13 +110,15 @@ def status_color(row):
 
 df["Status Visual"] = df.apply(status_color, axis=1)
 
-tabela = df[[
-    "Data",
-    "Responsavel",
-    "Rastreio",
-    "Motivo",
-    "Status Visual"
-]]
+tabela = df[
+    [
+        "Data",
+        "Responsavel",
+        "Rastreio",
+        "Motivo",
+        "Status Visual"
+    ]
+]
 
 st.dataframe(
     tabela,

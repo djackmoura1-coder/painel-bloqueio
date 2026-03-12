@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
 import gspread
+import json
 from google.oauth2.service_account import Credentials
 from datetime import date
 
-st.title("Solicitar Bloqueio de Pedido")
+st.title("📌 Solicitar Bloqueio de Pedido")
 
 # CONEXÃO COM GOOGLE SHEETS
 
@@ -14,17 +15,19 @@ scope = [
 ]
 
 credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"], scopes=scope
+    json.loads(st.secrets["gcp_service_account"]),
+    scopes=scope
 )
 
 client = gspread.authorize(credentials)
 
 sheet = client.open_by_key(
-    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao").get_worksheet(0)
+    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
+).sheet1
 
 # FORMULÁRIO
 
-data = st.date_input("Data", value=date.today())
+data = st.date_input("Data da solicitação", value=date.today())
 
 responsavel = st.text_input("Responsável solicitante")
 
@@ -34,13 +37,17 @@ motivo = st.text_area("Motivo do bloqueio")
 
 if st.button("Enviar solicitação"):
 
-    sheet.append_row([
-        str(data),
-        responsavel,
-        rastreio,
-        motivo,
-        "Pendente",
-        ""
-    ])
+    if rastreio == "":
+        st.warning("Informe o rastreio")
+    else:
 
-    st.success("Solicitação enviada com sucesso!")
+        sheet.append_row([
+            str(data),
+            responsavel,
+            rastreio,
+            motivo,
+            "Pendente",
+            ""
+        ])
+
+        st.success("✅ Solicitação enviada com sucesso!")
