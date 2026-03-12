@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import gspread
-import json
 from google.oauth2.service_account import Credentials
 
 st.title("🔧 Resolver Solicitações de Bloqueio")
@@ -15,7 +14,7 @@ scope = [
 
 
 credentials = Credentials.from_service_account_info(
-    json.loads(st.secrets["gcp_service_account"]),
+    st.secrets["gcp_service_account"],
     scopes=scope
 )
 
