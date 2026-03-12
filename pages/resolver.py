@@ -1,9 +1,42 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 
-arquivo = "dados_pedidos.xlsx"
+# CONEXÃO COM GOOGLE SHEETS
 
-df = pd.read_excel(arquivo)
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"], scopes=scope
+)
+
+client = gspread.authorize(credentials)
+
+sheet = client.open("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao").sheet1
+
+# LER DADOS
+
+dados = sheet.get_all_records()
+df = pd.DataFrame(dados)
+
+# GARANTIR QUE EXISTEM COLUNAS
+
+if df.empty:
+    df = pd.DataFrame(columns=[
+        "Data",
+        "Responsavel",
+        "Rastreio",
+        "Motivo",
+        "Status",
+        "Resultado"
+    ])
+
+# MÉTRICAS
+
 total = len(df)
 pendentes = len(df[df["Status"] == "Pendente"])
 bloqueados = len(df[df["Resultado"] == "Bloqueado"])
@@ -26,7 +59,7 @@ busca = st.text_input("Buscar pelo rastreio")
 
 if busca:
     resultado_busca = df[df["Rastreio"].astype(str).str.contains(busca)]
-    st.dataframe(resultado_busca)
+    st.dataframe(resultado_busca, use_container_width=True)
 
 # SELECIONAR OCORRÊNCIA
 
@@ -51,7 +84,7 @@ if not pendentes.empty:
         df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
         df.loc[df["Rastreio"] == rastreio, "Resultado"] = resultado
 
-        df.to_excel(arquivo, index=False)
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
         st.success("Ocorrência finalizada!")
 
