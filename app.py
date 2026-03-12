@@ -1,20 +1,21 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Painel de Bloqueio de Pedidos",
+    page_title="Sistema de Bloqueio de Pedidos",
     page_icon="📦",
     layout="wide"
 )
 
-st.title("📦 Painel de Controle de Bloqueio de Pedidos")
+st.title("📦 Sistema Operacional de Bloqueio")
 
-st.markdown(
-    """
-Sistema interno para controle de solicitações de bloqueio.
+st.markdown("""
+### Bem-vindo ao painel
 
-Use o menu lateral para navegar entre:
+Utilize o menu lateral para acessar as funcionalidades:
 
-• Solicitar Bloqueio  
-• Resolver Solicitações
-"""
-)
+📌 Solicitar Bloqueio  
+🔧 Resolver Ocorrências  
+📊 Dashboard Operacional
+""")
+
+st.info("Sistema interno de controle de bloqueios logísticos")
