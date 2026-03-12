@@ -19,7 +19,8 @@ credentials = Credentials.from_service_account_info(
 
 client = gspread.authorize(credentials)
 
-sheet = client.open("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao").sheet1
+sheet = client.open_by_key(
+    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao").sheet1
 
 # FORMULÁRIO
 
