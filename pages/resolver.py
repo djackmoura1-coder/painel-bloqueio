@@ -1,20 +1,13 @@
-import streamlit as st
-import pandas as pd
-import gspread
+import json
 from google.oauth2.service_account import Credentials
-
-st.title("🔧 Resolver Solicitações de Bloqueio")
-
-# CONEXÃO COM GOOGLE SHEETS
 
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-
 credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
+    json.loads(st.secrets["gcp_service_account"]),
     scopes=scope
 )
 
