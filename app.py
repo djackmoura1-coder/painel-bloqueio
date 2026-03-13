@@ -6,7 +6,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.image("assets/logo_petiko.jpg", width=250)
+st.image("assets/logo_petiko.png", width=250)
 
 st.title("📦 Sistema Operacional de Bloqueio")
 
