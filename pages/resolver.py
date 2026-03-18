@@ -1,11 +1,14 @@
+import smtplib
+from email.mime.text import MIMEText
+
 import streamlit as st
 import pandas as pd
 import gspread
-import json
 from google.oauth2.service_account import Credentials
 
 st.title("🔧 Resolver Solicitações de Bloqueio")
 
+# CONEXÃO GOOGLE SHEETS
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -22,20 +25,23 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-
+# DADOS
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
+
+# GARANTE COLUNA EMAIL
+if "Email" not in df.columns:
+    df["Email"] = ""
 
 if df.empty:
     st.info("Nenhuma ocorrência registrada ainda.")
     st.stop()
 
-
+# MÉTRICAS
 total = len(df)
 pendentes = len(df[df["Status"] == "Pendente"])
 bloqueados = len(df[df["Resultado"] == "Bloqueado"])
 nao_bloqueados = len(df[df["Resultado"] == "Não bloqueado"])
-
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -44,7 +50,7 @@ col2.metric("Pendentes 🟡", pendentes)
 col3.metric("Bloqueados 🟢", bloqueados)
 col4.metric("Não bloqueados 🔴", nao_bloqueados)
 
-
+# BUSCA
 st.subheader("🔎 Buscar ocorrência")
 
 busca = st.text_input("Buscar pelo rastreio")
@@ -53,7 +59,7 @@ if busca:
     resultado_busca = df[df["Rastreio"].astype(str).str.contains(busca)]
     st.dataframe(resultado_busca, use_container_width=True)
 
-
+# RESOLVER
 st.subheader("Resolver ocorrência")
 
 pendentes_df = df[df["Status"] == "Pendente"]
@@ -72,21 +78,60 @@ if not pendentes_df.empty:
 
     if st.button("Finalizar ocorrência"):
 
+        # Atualiza status
         df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
         df.loc[df["Rastreio"] == rastreio, "Resultado"] = resultado
 
+        # Pega email
+        email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
+
+        # Atualiza planilha
         sheet.update(
             [df.columns.values.tolist()] + df.values.tolist()
         )
 
-        st.success("Ocorrência finalizada!")
+        # ENVIO DE EMAIL
+        if email_cliente:
+
+            mensagem = f"""
+Olá,
+
+A solicitação de bloqueio do pedido {rastreio} foi analisada.
+
+Resultado: {resultado}
+
+Sistema de Bloqueio de Pedidos
+"""
+
+            msg = MIMEText(mensagem)
+            msg["Subject"] = "Resultado da solicitação de bloqueio"
+            msg["From"] = "djackmoura1@gmail.com"
+            msg["To"] = email_cliente
+
+            try:
+                servidor = smtplib.SMTP("smtp.gmail.com", 587)
+                servidor.starttls()
+                servidor.login("djackmoura1@gmail.com", "xssw hyhl tjao eeyj")
+                servidor.sendmail(
+                    "djackmoura1@gmail.com",
+                    email_cliente,
+                    msg.as_string()
+                )
+                servidor.quit()
+
+                st.success("✅ Ocorrência finalizada e email enviado!")
+
+            except:
+                st.warning("Ocorrência finalizada, mas não foi possível enviar email.")
+
+        else:
+            st.success("Ocorrência finalizada! (sem email cadastrado)")
 
 else:
     st.info("Não existem ocorrências pendentes.")
 
-
+# HISTÓRICO
 st.subheader("📊 Histórico de ocorrências")
-
 
 def status_color(row):
 
@@ -100,7 +145,6 @@ def status_color(row):
         return "🔴 Não bloqueado"
 
     return ""
-
 
 df["Status Visual"] = df.apply(status_color, axis=1)
 
