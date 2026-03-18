@@ -26,6 +26,7 @@ sheet = client.open_by_key(
 
 data = st.date_input("Data da solicitação", value=date.today())
 responsavel = st.text_input("Responsável solicitante")
+email = st.text_input("Email do solicitante")
 rastreio = st.text_input("Rastreio do pedido")
 motivo = st.text_area("Motivo do bloqueio")
 
@@ -39,6 +40,7 @@ if st.button("Enviar solicitação"):
         sheet.append_row([
             str(data),
             responsavel,
+            email,
             rastreio,
             motivo,
             "Pendente",
