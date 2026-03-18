@@ -39,7 +39,10 @@ if df.empty:
 
 # MÉTRICAS
 total = len(df)
-pendentes = len(df[df["Status"] == "Pendente"])
+pendentes_df = df[
+    (df["Status"] == "Pendente") |
+    (df["Status"] == "Tratativa")
+]
 bloqueados = len(df[df["Resultado"] == "Bloqueado"])
 nao_bloqueados = len(df[df["Resultado"] == "Não bloqueado"])
 
@@ -66,10 +69,10 @@ pendentes_df = df[df["Status"] == "Pendente"]
 
 if not pendentes_df.empty:
 
-    rastreio = st.selectbox(
-        "Selecionar rastreio",
-        pendentes_df["Rastreio"]
-    )
+    acao = st.radio(
+    "Ação da ocorrência",
+    ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
+)
 
     resultado = st.radio(
         "Resultado do bloqueio",
@@ -79,8 +82,13 @@ if not pendentes_df.empty:
     if st.button("Finalizar ocorrência"):
 
         # Atualiza status
-        df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
-        df.loc[df["Rastreio"] == rastreio, "Resultado"] = resultado
+        if acao == "Tratativa com a logística":
+    df.loc[df["Rastreio"] == rastreio, "Status"] = "Tratativa"
+    df.loc[df["Rastreio"] == rastreio, "Resultado"] = ""
+
+else:
+    df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
+    df.loc[df["Rastreio"] == rastreio, "Resultado"] = acao
 
         # Pega email
         email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
@@ -137,6 +145,9 @@ def status_color(row):
 
     if row["Status"] == "Pendente":
         return "🟡 Pendente"
+
+    if row["Status"] == "Tratativa":
+        return "🟠 Em tratativa logística"
 
     if row["Resultado"] == "Bloqueado":
         return "🟢 Bloqueado"
