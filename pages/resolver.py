@@ -29,7 +29,6 @@ sheet = client.open_by_key(
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
-# GARANTE COLUNA EMAIL
 if "Email" not in df.columns:
     df["Email"] = ""
 
@@ -39,10 +38,13 @@ if df.empty:
 
 # MÉTRICAS
 total = len(df)
+
 pendentes_df = df[
     (df["Status"] == "Pendente") |
     (df["Status"] == "Tratativa")
 ]
+
+pendentes = len(pendentes_df)
 bloqueados = len(df[df["Resultado"] == "Bloqueado"])
 nao_bloqueados = len(df[df["Resultado"] == "Não bloqueado"])
 
@@ -65,75 +67,77 @@ if busca:
 # RESOLVER
 st.subheader("Resolver ocorrência")
 
-pendentes_df = df[df["Status"] == "Pendente"]
-
 if not pendentes_df.empty:
 
-    acao = st.radio(
-    "Ação da ocorrência",
-    ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
-)
+    rastreio = st.selectbox(
+        "Selecionar rastreio",
+        pendentes_df["Rastreio"]
+    )
 
-    resultado = st.radio(
-        "Resultado do bloqueio",
-        ["Bloqueado", "Não bloqueado"]
+    acao = st.radio(
+        "Ação da ocorrência",
+        ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
     )
 
     if st.button("Finalizar ocorrência"):
 
-        # Atualiza status
         if acao == "Tratativa com a logística":
-    df.loc[df["Rastreio"] == rastreio, "Status"] = "Tratativa"
-    df.loc[df["Rastreio"] == rastreio, "Resultado"] = ""
 
-else:
-    df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
-    df.loc[df["Rastreio"] == rastreio, "Resultado"] = acao
+            df.loc[df["Rastreio"] == rastreio, "Status"] = "Tratativa"
+            df.loc[df["Rastreio"] == rastreio, "Resultado"] = ""
 
-        # Pega email
-        email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
+            sheet.update(
+                [df.columns.values.tolist()] + df.values.tolist()
+            )
 
-        # Atualiza planilha
-        sheet.update(
-            [df.columns.values.tolist()] + df.values.tolist()
-        )
+            st.warning("⚠️ Ocorrência enviada para tratativa logística")
 
-        # ENVIO DE EMAIL
-        if email_cliente:
+        else:
 
-            mensagem = f"""
+            df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
+            df.loc[df["Rastreio"] == rastreio, "Resultado"] = acao
+
+            email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
+
+            sheet.update(
+                [df.columns.values.tolist()] + df.values.tolist()
+            )
+
+            if email_cliente:
+
+                mensagem = f"""
 Olá,
 
 A solicitação de bloqueio do pedido {rastreio} foi analisada.
 
-Resultado: {resultado}
+Resultado: {acao}
 
 Sistema de Bloqueio de Pedidos
 """
 
-            msg = MIMEText(mensagem)
-            msg["Subject"] = "Resultado da solicitação de bloqueio"
-            msg["From"] = "djackmoura1@gmail.com"
-            msg["To"] = email_cliente
+                msg = MIMEText(mensagem)
+                msg["Subject"] = "Resultado da solicitação de bloqueio"
+                msg["From"] = "djackmoura1@gmail.com"
+                msg["To"] = email_cliente
 
-            try:
-                servidor = smtplib.SMTP("smtp.gmail.com", 587)
-                servidor.starttls()
-                servidor.login("djackmoura1@gmail.com", "xssw hyhl tjao eeyj")
-                servidor.sendmail(
-                    "djackmoura1@gmail.com",
-                    email_cliente,
-                    msg.as_string()
-                )
-                servidor.quit()
+                try:
+                    servidor = smtplib.SMTP("smtp.gmail.com", 587)
+                    servidor.starttls()
+                    servidor.login("djackmoura1@gmail.com", "xssw hyhl tjao eeyj")
+                    servidor.sendmail(
+                        "djackmoura1@gmail.com",
+                        email_cliente,
+                        msg.as_string()
+                    )
+                    servidor.quit()
 
-                st.success("✅ Ocorrência finalizada e email enviado!")
+                    st.success("✅ Ocorrência finalizada e email enviado!")
 
-            except:
-                st.warning("Ocorrência finalizada, mas não foi possível enviar email.")
+                except:
+                    st.warning("Ocorrência finalizada, mas não foi possível enviar email.")
 
-        else:
-            st.success("Ocorrência finalizada! (sem email cadastrado)")
+            else:
+                st.success("Ocorrência finalizada! (sem email cadastrado)")
 
 else:
     st.info("Não existem ocorrências pendentes.")
