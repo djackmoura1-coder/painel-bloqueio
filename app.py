@@ -30,24 +30,33 @@ sheet_solic = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("solicitacoes_usuarios")
 
+# 📊 USUÁRIOS
 df_users = pd.DataFrame(sheet_users.get_all_records())
 
 if not df_users.empty:
+    df_users.columns = df_users.columns.str.strip().str.lower()
     df_users["usuario"] = df_users["usuario"].astype(str)
     df_users["senha"] = df_users["senha"].astype(str)
+
+# 📊 SOLICITAÇÕES
+df_solic = pd.DataFrame(sheet_solic.get_all_records())
+
+if not df_solic.empty:
+    df_solic.columns = df_solic.columns.str.strip().str.lower()
+    df_solic = df_solic.fillna("")
 
 # SESSION
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
-# 🔐 TELA LOGIN + CADASTRO
+# 🔐 LOGIN + CADASTRO
 if not st.session_state.logado:
 
     st.title("🔐 Login do Sistema")
 
     col1, col2 = st.columns(2)
 
-    # LOGIN
+    # 🔑 LOGIN
     with col1:
         st.subheader("Entrar")
 
@@ -76,7 +85,7 @@ if not st.session_state.logado:
             else:
                 st.error("Usuário não encontrado")
 
-    # CADASTRO
+    # 📝 CADASTRO
     with col2:
         st.subheader("Solicitar cadastro")
 
@@ -85,21 +94,25 @@ if not st.session_state.logado:
 
         if st.button("Solicitar cadastro"):
 
-            if novo_usuario == "" or nova_senha == "":
+            if novo_usuario.strip() == "" or nova_senha.strip() == "":
                 st.warning("Preencha todos os campos")
+
+            elif not df_solic.empty and novo_usuario in df_solic["usuario"].values:
+                st.warning("Já existe uma solicitação para esse usuário")
 
             else:
 
                 sheet_solic.append_row([
-                    novo_usuario,
-                    nova_senha,
+                    str(novo_usuario),
+                    str(nova_senha),
                     "operador",
                     "Pendente"
                 ])
 
                 st.success("Solicitação enviada para aprovação!")
+                st.rerun()
 
-# SISTEMA
+# 🟢 SISTEMA
 else:
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
@@ -117,12 +130,11 @@ else:
     🔧 Resolver  
     """)
 
-    # 🔥 BOTÃO ADMIN (OPCIONAL)
+    # 🔥 APROVAÇÃO (SÓ ADMIN)
     if st.session_state.perfil == "admin":
 
         st.subheader("👤 Aprovação de usuários")
 
-        df_solic = pd.DataFrame(sheet_solic.get_all_records())
         pendentes = df_solic[df_solic["status"] == "Pendente"]
 
         if not pendentes.empty:
@@ -136,19 +148,21 @@ else:
 
                 dados = pendentes[pendentes["usuario"] == usuario_aprovar].iloc[0]
 
+                # ADICIONA USUÁRIO
                 sheet_users.append_row([
-                    dados["usuario"],
-                    dados["senha"],
-                    dados["perfil"]
+                    str(dados["usuario"]),
+                    str(dados["senha"]),
+                    str(dados["perfil"])
                 ])
 
+                # ATUALIZA STATUS
                 df_solic.loc[df_solic["usuario"] == usuario_aprovar, "status"] = "Aprovado"
 
                 sheet_solic.update(
                     [df_solic.columns.values.tolist()] + df_solic.values.tolist()
                 )
 
-                st.success("Usuário aprovado!")
+                st.success("Usuário aprovado com sucesso!")
                 st.rerun()
 
         else:
