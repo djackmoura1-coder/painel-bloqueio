@@ -23,34 +23,35 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-# FORMULÁRIO
-data = st.date_input("Data da solicitação", value=date.today())
-responsavel = st.text_input("Responsável solicitante")
-email = st.text_input("Email do solicitante")
-rastreio = st.text_input("Rastreio do pedido")
-motivo = st.text_area("Motivo do bloqueio")
+# 🔥 FORMULÁRIO PROFISSIONAL
+with st.form("form_solicitacao", clear_on_submit=True):
 
-# BOTÃO
-if st.button("Enviar solicitação"):
+    data = st.date_input("Data da solicitação", value=date.today())
+    responsavel = st.text_input("Responsável solicitante")
+    email = st.text_input("Email do solicitante")
+    rastreio = st.text_input("Rastreio do pedido")
+    motivo = st.text_area("Motivo do bloqueio")
 
-    if rastreio == "":
-        st.warning("⚠️ Informe o rastreio")
+    enviar = st.form_submit_button("Enviar solicitação")
 
-    elif email == "":
-        st.warning("⚠️ Informe o email")
+    if enviar:
 
-    else:
+        if rastreio == "":
+            st.warning("⚠️ Informe o rastreio")
 
-        sheet.append_row([
-            str(data),
-            responsavel,
-            email,
-            rastreio,
-            motivo,
-            "Pendente",
-            ""
-        ])
+        elif email == "":
+            st.warning("⚠️ Informe o email")
 
-        st.success("✅ Solicitação enviada com sucesso!")
+        else:
 
-        st.rerun()  # 🔥 ATUALIZA A TELA AUTOMATICAMENTE
+            sheet.append_row([
+                str(data),
+                responsavel,
+                email,
+                rastreio,
+                motivo,
+                "Pendente",
+                ""
+            ])
+
+            st.success("✅ Solicitação enviada com sucesso!")
