@@ -1,23 +1,53 @@
 import streamlit as st
 
+# CONFIG
 st.set_page_config(
-    page_title="Sistema de Bloqueio de Pedidos",
-    page_icon="📦",
+    page_title="Sistema de Bloqueio",
     layout="wide"
 )
 
-st.image("assets/logo_petiko.png", width=250)
+# 🔐 USUÁRIOS (BASE SIMPLES)
+usuarios = {
+    "djack": {"senha": "123", "perfil": "admin"},
+    "operador1": {"senha": "123", "perfil": "operador"}
+}
 
-st.title("📦 Sistema Operacional de Bloqueio")
+# SESSION
+if "logado" not in st.session_state:
+    st.session_state.logado = False
 
-st.markdown("""
-### Bem-vindo ao painel
+# LOGIN
+if not st.session_state.logado:
 
-Utilize o menu lateral para acessar as funcionalidades:
+    st.title("🔐 Login do Sistema")
 
-📌 Solicitar Bloqueio  
-🔧 Resolver Ocorrências  
-📊 Dashboard Operacional
-""")
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
 
-st.info("Sistema interno de controle de bloqueios logísticos")
+    if st.button("Entrar"):
+
+        if usuario in usuarios and usuarios[usuario]["senha"] == senha:
+            st.session_state.logado = True
+            st.session_state.usuario = usuario
+            st.session_state.perfil = usuarios[usuario]["perfil"]
+            st.rerun()
+        else:
+            st.error("Usuário ou senha inválidos")
+
+else:
+
+    st.sidebar.success(f"Logado como: {st.session_state.usuario}")
+
+    if st.sidebar.button("Sair"):
+        st.session_state.logado = False
+        st.rerun()
+
+    st.title("📦 Sistema de Bloqueio de Pedidos")
+
+    st.markdown("""
+    Use o menu lateral para navegar:
+
+    📌 Solicitar  
+    🔧 Resolver  
+    📊 Dashboard  
+    """)
