@@ -92,6 +92,8 @@ if not pendentes_df.empty:
 
             st.warning("⚠️ Ocorrência enviada para tratativa logística")
 
+            st.rerun()  # 🔥 AQUI
+
         else:
 
             df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
@@ -138,6 +140,8 @@ Sistema de Bloqueio de Pedidos
 
             else:
                 st.success("Ocorrência finalizada! (sem email cadastrado)")
+
+            st.rerun()  # 🔥 AQUI TAMBÉM
 
 else:
     st.info("Não existem ocorrências pendentes.")
