@@ -1,4 +1,10 @@
 import streamlit as st
+
+if "logado" not in st.session_state or not st.session_state.logado:
+    st.warning("🔒 Faça login para acessar o sistema")
+    st.stop()
+
+import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
