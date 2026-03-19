@@ -29,6 +29,11 @@ sheet_usuarios = client.open_by_key(
 dados = sheet_usuarios.get_all_records()
 df_users = pd.DataFrame(dados)
 
+# 🔧 GARANTE TIPO CORRETO
+if not df_users.empty:
+    df_users["usuario"] = df_users["usuario"].astype(str)
+    df_users["senha"] = df_users["senha"].astype(str)
+
 # SESSION
 if "logado" not in st.session_state:
     st.session_state.logado = False
@@ -43,11 +48,13 @@ if not st.session_state.logado:
 
     if st.button("Entrar"):
 
-        if usuario in df_users["usuario"].values:
+        user_data = df_users[df_users["usuario"] == usuario]
 
-            user_data = df_users[df_users["usuario"] == usuario].iloc[0]
+        if not user_data.empty:
 
-            if user_data["senha"] == senha:
+            user_data = user_data.iloc[0]
+
+            if str(user_data["senha"]) == str(senha):
 
                 st.session_state.logado = True
                 st.session_state.usuario = usuario
@@ -77,6 +84,5 @@ else:
 
     📌 Solicitar  
     🔧 Resolver  
-    📊 Dashboard  
-    👤 Usuários (admin)
+    👤 Usuários  
     """)
