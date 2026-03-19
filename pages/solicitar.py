@@ -23,7 +23,11 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-# 🔥 FORMULÁRIO PROFISSIONAL
+# 🔥 CARREGA DADOS PARA VALIDAÇÃO
+dados = sheet.get_all_records()
+df = pd.DataFrame(dados)
+
+# FORMULÁRIO
 with st.form("form_solicitacao", clear_on_submit=True):
 
     data = st.date_input("Data da solicitação", value=date.today())
@@ -41,6 +45,10 @@ with st.form("form_solicitacao", clear_on_submit=True):
 
         elif email == "":
             st.warning("⚠️ Informe o email")
+
+        # 🔥 VALIDAÇÃO DE DUPLICIDADE
+        elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
+            st.warning("⚠️ Já existe uma solicitação com este código")
 
         else:
 
