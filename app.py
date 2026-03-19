@@ -45,12 +45,23 @@ if not st.session_state.logado:
 
     if st.button("Entrar"):
 
-        # 🔥 NORMALIZAÇÃO DOS DADOS
-        df_users["usuario"] = df_users["usuario"].astype(str).str.strip()
-        df_users["senha"] = df_users["senha"].astype(str).str.strip()
-
         usuario_input = str(usuario).strip()
         senha_input = str(senha).strip()
+
+        # 🔥 ADMIN FIXO (BACKUP)
+        if usuario_input == "admin" and senha_input == "123456":
+
+            st.session_state.logado = True
+            st.session_state.usuario = "admin"
+            st.session_state.perfil = "admin"
+            st.session_state.departamento = "Admin"
+
+            st.rerun()
+
+        # 🔄 NORMALIZA DADOS DA PLANILHA
+        if not df_users.empty:
+            df_users["usuario"] = df_users["usuario"].astype(str).str.strip()
+            df_users["senha"] = df_users["senha"].astype(str).str.strip()
 
         if usuario_input in df_users["usuario"].values:
 
@@ -104,7 +115,7 @@ if not st.session_state.logado:
             st.success("Solicitação enviada! Aguarde aprovação.")
             st.rerun()
 
-# 🔓 SISTEMA LIBERADO
+# 🔓 SISTEMA
 else:
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
@@ -158,7 +169,7 @@ else:
                     str(dados["departamento"])
                 ])
 
-                # REMOVE DA LISTA DE PENDENTES
+                # REMOVE DA LISTA
                 df_solic = df_solic[df_solic["usuario"] != usuario_aprovar]
 
                 sheet_solic.clear()
