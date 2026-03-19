@@ -21,101 +21,87 @@ credentials = Credentials.from_service_account_info(
 
 client = gspread.authorize(credentials)
 
-# PLANILHAS
-sheet_users = client.open_by_key(
-    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
-).worksheet("usuarios")
+# 🔑 PLANILHAS
+spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
 
-sheet_solic = client.open_by_key(
-    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
-).worksheet("solicitacoes_usuarios")
+sheet_users = spreadsheet.worksheet("usuarios")
+sheet_solic = spreadsheet.worksheet("solicitacoes_usuarios")
 
-# 📊 USUÁRIOS
+# 🔄 DADOS
 df_users = pd.DataFrame(sheet_users.get_all_records())
-
-if not df_users.empty:
-    df_users.columns = df_users.columns.str.strip().str.lower()
-    df_users["usuario"] = df_users["usuario"].astype(str)
-    df_users["senha"] = df_users["senha"].astype(str)
-
-# 📊 SOLICITAÇÕES
 df_solic = pd.DataFrame(sheet_solic.get_all_records())
-
-if not df_solic.empty:
-    df_solic.columns = df_solic.columns.str.strip().str.lower()
-    df_solic = df_solic.fillna("")
 
 # SESSION
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
-# 🔐 LOGIN + CADASTRO
+# 🔐 LOGIN
 if not st.session_state.logado:
 
     st.title("🔐 Login do Sistema")
 
-    col1, col2 = st.columns(2)
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
 
-    # 🔑 LOGIN
-    with col1:
-        st.subheader("Entrar")
+    if st.button("Entrar"):
 
-        usuario = st.text_input("Usuário")
-        senha = st.text_input("Senha", type="password")
+        if not df_users.empty and usuario in df_users["usuario"].values:
 
-        if st.button("Entrar"):
+            user_data = df_users[df_users["usuario"] == usuario].iloc[0]
 
-            user_data = df_users[df_users["usuario"] == usuario]
+            if user_data["senha"] == senha:
 
-            if not user_data.empty:
+                st.session_state.logado = True
+                st.session_state.usuario = usuario
+                st.session_state.perfil = user_data["perfil"]
+                st.session_state.departamento = user_data.get("departamento", "")
 
-                user_data = user_data.iloc[0]
-
-                if str(user_data["senha"]) == str(senha):
-
-                    st.session_state.logado = True
-                    st.session_state.usuario = usuario
-                    st.session_state.perfil = user_data["perfil"]
-
-                    st.rerun()
-
-                else:
-                    st.error("Senha incorreta")
-
-            else:
-                st.error("Usuário não encontrado")
-
-    # 📝 CADASTRO
-    with col2:
-        st.subheader("Solicitar cadastro")
-
-        novo_usuario = st.text_input("Novo usuário")
-        nova_senha = st.text_input("Nova senha", type="password")
-
-        if st.button("Solicitar cadastro"):
-
-            if novo_usuario.strip() == "" or nova_senha.strip() == "":
-                st.warning("Preencha todos os campos")
-
-            elif not df_solic.empty and novo_usuario in df_solic["usuario"].values:
-                st.warning("Já existe uma solicitação para esse usuário")
-
-            else:
-
-                sheet_solic.append_row([
-                    str(novo_usuario),
-                    str(nova_senha),
-                    "operador",
-                    "Pendente"
-                ])
-
-                st.success("Solicitação enviada para aprovação!")
                 st.rerun()
 
-# 🟢 SISTEMA
+            else:
+                st.error("Senha incorreta")
+
+        else:
+            st.error("Usuário não encontrado")
+
+    # 📌 CADASTRO
+    st.divider()
+    st.subheader("📌 Solicitar acesso")
+
+    novo_usuario = st.text_input("Novo usuário")
+    nova_senha = st.text_input("Nova senha", type="password")
+
+    departamento = st.selectbox(
+        "Departamento",
+        ["Atendimento", "Logística", "Faturamento", "Expedição"]
+    )
+
+    if st.button("Solicitar cadastro"):
+
+        if novo_usuario == "" or nova_senha == "":
+            st.warning("Preencha todos os campos")
+
+        elif not df_solic.empty and novo_usuario in df_solic["usuario"].values:
+            st.warning("Usuário já solicitado")
+
+        else:
+
+            sheet_solic.append_row([
+                str(novo_usuario),
+                str(nova_senha),
+                "operador",
+                str(departamento),
+                "Pendente"
+            ])
+
+            st.success("Solicitação enviada! Aguarde aprovação.")
+            st.rerun()
+
+# 🔓 SISTEMA LIBERADO
 else:
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
+    st.sidebar.write(f"🏢 {st.session_state.departamento}")
 
     if st.sidebar.button("Sair"):
         st.session_state.logado = False
@@ -128,11 +114,13 @@ else:
 
     📌 Solicitar  
     🔧 Resolver  
+    📊 Dashboard  
     """)
 
-    # 🔥 APROVAÇÃO (SÓ ADMIN)
+    # 🔐 APROVAÇÃO (ADMIN)
     if st.session_state.perfil == "admin":
 
+        st.divider()
         st.subheader("👤 Aprovação de usuários")
 
         pendentes = df_solic[df_solic["status"] == "Pendente"]
@@ -144,26 +132,32 @@ else:
                 pendentes["usuario"]
             )
 
+            perfil_escolhido = st.selectbox(
+                "Definir perfil",
+                ["operador", "admin"]
+            )
+
             if st.button("Aprovar usuário"):
 
                 dados = pendentes[pendentes["usuario"] == usuario_aprovar].iloc[0]
 
-                # ADICIONA USUÁRIO
                 sheet_users.append_row([
                     str(dados["usuario"]),
                     str(dados["senha"]),
-                    str(dados["perfil"])
+                    str(perfil_escolhido),
+                    str(dados["departamento"])
                 ])
 
-                # ATUALIZA STATUS
-                df_solic.loc[df_solic["usuario"] == usuario_aprovar, "status"] = "Aprovado"
+                # REMOVE DA LISTA DE PENDENTES
+                df_solic = df_solic[df_solic["usuario"] != usuario_aprovar]
+                sheet_solic.clear()
+                sheet_solic.append_row(df_solic.columns.tolist())
 
-                sheet_solic.update(
-                    [df_solic.columns.values.tolist()] + df_solic.values.tolist()
-                )
+                for i in df_solic.values.tolist():
+                    sheet_solic.append_row(i)
 
                 st.success("Usuário aprovado com sucesso!")
                 st.rerun()
 
         else:
-            st.info("Nenhuma solicitação pendente")
+            st.info("Nenhuma solicitação pendente.")
