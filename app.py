@@ -45,14 +45,21 @@ if not st.session_state.logado:
 
     if st.button("Entrar"):
 
-        if not df_users.empty and usuario in df_users["usuario"].values:
+        # 🔥 NORMALIZAÇÃO DOS DADOS
+        df_users["usuario"] = df_users["usuario"].astype(str).str.strip()
+        df_users["senha"] = df_users["senha"].astype(str).str.strip()
 
-            user_data = df_users[df_users["usuario"] == usuario].iloc[0]
+        usuario_input = str(usuario).strip()
+        senha_input = str(senha).strip()
 
-            if user_data["senha"] == senha:
+        if usuario_input in df_users["usuario"].values:
+
+            user_data = df_users[df_users["usuario"] == usuario_input].iloc[0]
+
+            if user_data["senha"] == senha_input:
 
                 st.session_state.logado = True
-                st.session_state.usuario = usuario
+                st.session_state.usuario = usuario_input
                 st.session_state.perfil = user_data["perfil"]
                 st.session_state.departamento = user_data.get("departamento", "")
 
@@ -87,8 +94,8 @@ if not st.session_state.logado:
         else:
 
             sheet_solic.append_row([
-                str(novo_usuario),
-                str(nova_senha),
+                str(novo_usuario).strip(),
+                str(nova_senha).strip(),
                 "operador",
                 str(departamento),
                 "Pendente"
@@ -123,6 +130,9 @@ else:
         st.divider()
         st.subheader("👤 Aprovação de usuários")
 
+        if not df_solic.empty:
+            df_solic["usuario"] = df_solic["usuario"].astype(str).str.strip()
+
         pendentes = df_solic[df_solic["status"] == "Pendente"]
 
         if not pendentes.empty:
@@ -142,19 +152,20 @@ else:
                 dados = pendentes[pendentes["usuario"] == usuario_aprovar].iloc[0]
 
                 sheet_users.append_row([
-                    str(dados["usuario"]),
-                    str(dados["senha"]),
+                    str(dados["usuario"]).strip(),
+                    str(dados["senha"]).strip(),
                     str(perfil_escolhido),
                     str(dados["departamento"])
                 ])
 
                 # REMOVE DA LISTA DE PENDENTES
                 df_solic = df_solic[df_solic["usuario"] != usuario_aprovar]
+
                 sheet_solic.clear()
                 sheet_solic.append_row(df_solic.columns.tolist())
 
-                for i in df_solic.values.tolist():
-                    sheet_solic.append_row(i)
+                for linha in df_solic.values.tolist():
+                    sheet_solic.append_row(linha)
 
                 st.success("Usuário aprovado com sucesso!")
                 st.rerun()
