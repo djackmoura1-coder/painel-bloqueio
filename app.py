@@ -31,6 +31,19 @@ sheet_solic = spreadsheet.worksheet("solicitacoes_usuarios")
 df_users = pd.DataFrame(sheet_users.get_all_records())
 df_solic = pd.DataFrame(sheet_solic.get_all_records())
 
+# 🔥 NORMALIZAÇÃO COMPLETA
+if not df_users.empty:
+    df_users.columns = df_users.columns.str.strip().str.lower()
+
+    df_users["usuario"] = df_users["usuario"].astype(str).str.strip()
+    df_users["senha"] = df_users["senha"].astype(str).str.strip()
+
+    # 🔥 GARANTE EMAIL
+    if "email" in df_users.columns:
+        df_users["email"] = df_users["email"].astype(str).str.strip()
+    else:
+        df_users["email"] = ""
+
 # SESSION
 if "logado" not in st.session_state:
     st.session_state.logado = False
@@ -48,7 +61,7 @@ if not st.session_state.logado:
         usuario_input = str(usuario).strip()
         senha_input = str(senha).strip()
 
-        # 🔥 ADMIN FIXO (BACKUP)
+        # 🔥 ADMIN FIXO
         if usuario_input == "admin" and senha_input == "123456":
 
             st.session_state.logado = True
@@ -58,13 +71,6 @@ if not st.session_state.logado:
             st.session_state.email = "admin@empresa.com"
 
             st.rerun()
-
-        # 🔄 NORMALIZA DADOS
-        if not df_users.empty:
-            df_users.columns = df_users.columns.str.strip().str.lower()
-
-            df_users["usuario"] = df_users["usuario"].astype(str).str.strip()
-            df_users["senha"] = df_users["senha"].astype(str).str.strip()
 
         if usuario_input in df_users["usuario"].values:
 
@@ -76,7 +82,7 @@ if not st.session_state.logado:
                 st.session_state.usuario = usuario_input
                 st.session_state.perfil = user_data["perfil"]
                 st.session_state.departamento = user_data.get("departamento", "")
-                st.session_state.email = user_data.get("email", "")  # 👈 NOVO
+                st.session_state.email = user_data.get("email", "")  # 👈 AGORA FUNCIONA
 
                 st.rerun()
 
@@ -173,10 +179,9 @@ else:
                     str(dados["senha"]).strip(),
                     str(perfil_escolhido),
                     str(dados["departamento"]),
-                    ""  # 👈 EMAIL VAZIO (pode preencher depois)
+                    ""  # email pode preencher depois
                 ])
 
-                # REMOVE DA LISTA
                 df_solic = df_solic[df_solic["usuario"] != usuario_aprovar]
 
                 sheet_solic.clear()
