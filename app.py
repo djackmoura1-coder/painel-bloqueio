@@ -55,11 +55,14 @@ if not st.session_state.logado:
             st.session_state.usuario = "admin"
             st.session_state.perfil = "admin"
             st.session_state.departamento = "Admin"
+            st.session_state.email = "admin@empresa.com"
 
             st.rerun()
 
-        # 🔄 NORMALIZA DADOS DA PLANILHA
+        # 🔄 NORMALIZA DADOS
         if not df_users.empty:
+            df_users.columns = df_users.columns.str.strip().str.lower()
+
             df_users["usuario"] = df_users["usuario"].astype(str).str.strip()
             df_users["senha"] = df_users["senha"].astype(str).str.strip()
 
@@ -73,6 +76,7 @@ if not st.session_state.logado:
                 st.session_state.usuario = usuario_input
                 st.session_state.perfil = user_data["perfil"]
                 st.session_state.departamento = user_data.get("departamento", "")
+                st.session_state.email = user_data.get("email", "")  # 👈 NOVO
 
                 st.rerun()
 
@@ -120,6 +124,7 @@ else:
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
     st.sidebar.write(f"🏢 {st.session_state.departamento}")
+    st.sidebar.write(f"📧 {st.session_state.get('email','')}")
 
     if st.sidebar.button("Sair"):
         st.session_state.logado = False
@@ -142,6 +147,7 @@ else:
         st.subheader("👤 Aprovação de usuários")
 
         if not df_solic.empty:
+            df_solic.columns = df_solic.columns.str.strip().str.lower()
             df_solic["usuario"] = df_solic["usuario"].astype(str).str.strip()
 
         pendentes = df_solic[df_solic["status"] == "Pendente"]
@@ -166,7 +172,8 @@ else:
                     str(dados["usuario"]).strip(),
                     str(dados["senha"]).strip(),
                     str(perfil_escolhido),
-                    str(dados["departamento"])
+                    str(dados["departamento"]),
+                    ""  # 👈 EMAIL VAZIO (pode preencher depois)
                 ])
 
                 # REMOVE DA LISTA
