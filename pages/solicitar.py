@@ -28,19 +28,24 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-df = pd.DataFrame(sheet.get_all_records())
+# 🚀 CACHE (SOMENTE VISUAL)
+@st.cache_data(ttl=60)
+def carregar_dados():
+    dados = sheet.get_all_records()
+    return pd.DataFrame(dados)
+
+df = carregar_dados()
 
 # 🔥 CONTROLE DE LIMPEZA
 if "limpar_form" not in st.session_state:
     st.session_state.limpar_form = False
 
-# 🔥 LIMPEZA SEGURA (ANTES DE RENDERIZAR CAMPOS)
 if st.session_state.limpar_form:
     st.session_state["responsavel"] = ""
     st.session_state["id_assinatura"] = ""
     st.session_state["rastreio"] = ""
     st.session_state["detalhe"] = ""
-    st.session_state["limpar_form"] = False
+    st.session_state.limpar_form = False
 
 # 📝 FORMULÁRIO
 data = st.date_input("Data", value=date.today())
@@ -76,14 +81,21 @@ detalhe = st.text_area("Detalhes", key="detalhe")
 # 🚀 ENVIO
 if st.button("Enviar"):
 
+    # 🔥 BUSCA ATUAL (SEM CACHE)
+    dados_atualizados = sheet.get_all_records()
+    df_atualizado = pd.DataFrame(dados_atualizados)
+
     if rastreio == "":
         st.warning("Informe o rastreio")
 
     elif responsavel.strip() == "":
         st.warning("Informe o responsável")
 
-    elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
-        st.warning("Já existe uma solicitação com este rastreio")
+    elif email.strip() == "":
+        st.warning("Informe o email")
+
+    elif not df_atualizado.empty and rastreio in df_atualizado["Rastreio"].astype(str).values:
+        st.warning("🚫 Já existe uma solicitação com este rastreio")
 
     else:
 
@@ -102,7 +114,7 @@ if st.button("Enviar"):
 
         st.success("✅ Solicitação enviada com sucesso!")
 
-        # 🔥 ATIVA LIMPEZA
+        # 🔥 LIMPA CAMPOS (MENOS EMAIL)
         st.session_state.limpar_form = True
 
         st.rerun()
