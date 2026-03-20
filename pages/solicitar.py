@@ -6,7 +6,7 @@ from datetime import date
 
 st.title("📌 Solicitar Bloqueio de Pedido")
 
-# CONEXÃO
+# 🔗 CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -23,20 +23,37 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-# FORMULÁRIO
-data = st.date_input("Data da solicitação", value=date.today())
-responsavel = st.text_input("Responsável solicitante")
-email = st.text_input("Email do solicitante")
-
-id_assinatura = st.text_input("ID Assinatura")  # 👈 NOVO CAMPO
-
-rastreio = st.text_input("Rastreio do pedido")
-motivo = st.text_area("Motivo do bloqueio")
-
-# CARREGA DADOS PARA VALIDAR DUPLICIDADE
+# 📋 CARREGA DADOS
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
+# 📝 FORMULÁRIO
+data = st.date_input("Data da solicitação", value=date.today())
+responsavel = st.text_input("Responsável solicitante")
+email = st.text_input("Email do solicitante")
+id_assinatura = st.text_input("ID Assinatura")
+rastreio = st.text_input("Rastreio do pedido")
+
+# 🎯 MOTIVOS PADRÃO
+motivo_padrao = st.selectbox(
+    "Motivo do bloqueio",
+    [
+        "Cancelamento",
+        "Suspeita de fraude",
+        "Alteração de porte de trilha",
+        "Contestação",
+        "RA",
+        "Box entregue",
+        "PROCON",
+        "Duplicidade",
+        "Correção de faturamento"
+    ]
+)
+
+# ✏️ COMPLEMENTO
+motivo_extra = st.text_area("Detalhes adicionais (opcional)")
+
+# 🚀 ENVIO
 if st.button("Enviar solicitação"):
 
     if rastreio == "":
@@ -47,13 +64,19 @@ if st.button("Enviar solicitação"):
 
     else:
 
+        motivo_final = (
+            f"{motivo_padrao} - {motivo_extra}"
+            if motivo_extra
+            else motivo_padrao
+        )
+
         sheet.append_row([
             str(data),
             responsavel,
             email,
-            id_assinatura,  # 👈 SALVANDO NOVO CAMPO
+            id_assinatura,
             rastreio,
-            motivo,
+            motivo_final,
             "Pendente",
             ""
         ])
