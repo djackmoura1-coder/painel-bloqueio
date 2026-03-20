@@ -3,6 +3,11 @@ import streamlit as st
 if "logado" not in st.session_state or not st.session_state.logado:
     st.warning("🔒 Faça login para acessar")
     st.stop()
+    
+# 🔒 BLOQUEIO DE DEPARTAMENTO
+if st.session_state.get("departamento", "").lower() == "atendimento":
+    st.warning("🚫 O departamento de Atendimento não possui permissão para resolver ocorrências.")
+    st.stop()
 
 import smtplib
 from email.mime.text import MIMEText
