@@ -4,9 +4,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import date
 
+# 🔒 BLOQUEIO
+if "logado" not in st.session_state or not st.session_state.logado:
+    st.warning("🔒 Faça login para acessar")
+    st.stop()
+
 st.title("📌 Solicitar Bloqueio de Pedido")
 
-# 🔗 CONEXÃO
+# CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -23,28 +28,23 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-# 📋 CARREGA DADOS
-dados = sheet.get_all_records()
-df = pd.DataFrame(dados)
+df = pd.DataFrame(sheet.get_all_records())
 
-# 📝 FORMULÁRIO
-data = st.date_input("Data da solicitação", value=date.today())
+# FORMULÁRIO
+data = st.date_input("Data", value=date.today())
+responsavel = st.text_input("Responsável")
 
-# 👤 RESPONSÁVEL (MANUAL)
-responsavel = st.text_input("Responsável solicitante")
-
-# 📧 EMAIL (PREENCHIDO MAS EDITÁVEL)
+# 🔥 EMAIL AUTOMÁTICO
 email = st.text_input(
-    "Email do solicitante",
+    "Email",
     value=st.session_state.get("email", "")
 )
 
 id_assinatura = st.text_input("ID Assinatura")
-rastreio = st.text_input("Rastreio do pedido")
+rastreio = st.text_input("Rastreio")
 
-# 🎯 MOTIVOS PADRÃO
-motivo_padrao = st.selectbox(
-    "Motivo do bloqueio",
+motivo = st.selectbox(
+    "Motivo",
     [
         "Cancelamento",
         "Suspeita de fraude",
@@ -58,36 +58,24 @@ motivo_padrao = st.selectbox(
     ]
 )
 
-# ✏️ COMPLEMENTO
-motivo_extra = st.text_area("Detalhes adicionais (opcional)")
+detalhe = st.text_area("Detalhes")
 
-# 🚀 ENVIO
-if st.button("Enviar solicitação"):
+if st.button("Enviar"):
 
     if rastreio == "":
         st.warning("Informe o rastreio")
 
-    elif responsavel.strip() == "":
-        st.warning("Informe o responsável")
-
-    elif email.strip() == "":
-        st.warning("Informe o email")
-
     elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
-        st.warning("Já existe uma solicitação com este rastreio")
+        st.warning("Duplicado")
 
     else:
 
-        motivo_final = (
-            f"{motivo_padrao} - {motivo_extra}"
-            if motivo_extra
-            else motivo_padrao
-        )
+        motivo_final = f"{motivo} - {detalhe}" if detalhe else motivo
 
         sheet.append_row([
             str(data),
-            responsavel.strip(),
-            email.strip(),  # 👈 GARANTE QUE O EMAIL VAI CERTO
+            responsavel,
+            email,
             id_assinatura,
             rastreio,
             motivo_final,
@@ -95,5 +83,5 @@ if st.button("Enviar solicitação"):
             ""
         ])
 
-        st.success("✅ Solicitação enviada com sucesso!")
+        st.success("Enviado!")
         st.rerun()
