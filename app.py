@@ -3,7 +3,14 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
-st.set_page_config(page_title="Sistema de Bloqueio", layout="wide")
+st.set_page_config(
+    page_title="Sistema de Bloqueio",
+    page_icon="assets/logo_petiko.png",  # 🔥 favicon
+    layout="wide"
+)
+
+# 🔥 LOGO NO TOPO
+st.image("assets/logo_petiko.png", width=180)
 
 # CONEXÃO
 scope = [
@@ -84,6 +91,9 @@ if not st.session_state.logado:
             st.error("Usuário não encontrado")
 
 else:
+
+    # 🔥 LOGO NA SIDEBAR (PROFISSIONAL)
+    st.sidebar.image("assets/logo_petiko.png", width=150)
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
     st.sidebar.write(f"🏢 {st.session_state.departamento}")
