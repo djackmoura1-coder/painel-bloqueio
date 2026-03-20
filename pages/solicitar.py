@@ -11,7 +11,7 @@ if "logado" not in st.session_state or not st.session_state.logado:
 
 st.title("📌 Solicitar Bloqueio de Pedido")
 
-# CONEXÃO
+# 🔗 CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -30,18 +30,33 @@ sheet = client.open_by_key(
 
 df = pd.DataFrame(sheet.get_all_records())
 
-# FORMULÁRIO
-data = st.date_input("Data", value=date.today())
-responsavel = st.text_input("Responsável")
+# 🔥 CONTROLE DE LIMPEZA
+if "limpar_form" not in st.session_state:
+    st.session_state.limpar_form = False
 
-# 🔥 EMAIL AUTOMÁTICO
-email = st.text_input(
-    "Email",
-    value=st.session_state.get("email", "")
+# 📝 FORMULÁRIO
+data = st.date_input("Data", value=date.today())
+
+responsavel = st.text_input(
+    "Responsável",
+    key="responsavel"
 )
 
-id_assinatura = st.text_input("ID Assinatura")
-rastreio = st.text_input("Rastreio")
+email = st.text_input(
+    "Email",
+    value=st.session_state.get("email", ""),
+    key="email"
+)
+
+id_assinatura = st.text_input(
+    "ID Assinatura",
+    key="id_assinatura"
+)
+
+rastreio = st.text_input(
+    "Rastreio",
+    key="rastreio"
+)
 
 motivo = st.selectbox(
     "Motivo",
@@ -55,18 +70,26 @@ motivo = st.selectbox(
         "PROCON",
         "Duplicidade",
         "Correção de faturamento"
-    ]
+    ],
+    key="motivo"
 )
 
-detalhe = st.text_area("Detalhes")
+detalhe = st.text_area(
+    "Detalhes",
+    key="detalhe"
+)
 
+# 🚀 ENVIO
 if st.button("Enviar"):
 
     if rastreio == "":
         st.warning("Informe o rastreio")
 
+    elif responsavel.strip() == "":
+        st.warning("Informe o responsável")
+
     elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
-        st.warning("Duplicado")
+        st.warning("Já existe uma solicitação com este rastreio")
 
     else:
 
@@ -74,8 +97,8 @@ if st.button("Enviar"):
 
         sheet.append_row([
             str(data),
-            responsavel,
-            email,
+            responsavel.strip(),
+            email.strip(),
             id_assinatura,
             rastreio,
             motivo_final,
@@ -83,5 +106,12 @@ if st.button("Enviar"):
             ""
         ])
 
-        st.success("Enviado!")
+        st.success("✅ Solicitação enviada com sucesso!")
+
+        # 🔥 LIMPA CAMPOS (MENOS EMAIL)
+        st.session_state.responsavel = ""
+        st.session_state.id_assinatura = ""
+        st.session_state.rastreio = ""
+        st.session_state.detalhe = ""
+
         st.rerun()
