@@ -34,29 +34,27 @@ df = pd.DataFrame(sheet.get_all_records())
 if "limpar_form" not in st.session_state:
     st.session_state.limpar_form = False
 
+# 🔥 LIMPEZA SEGURA (ANTES DE RENDERIZAR CAMPOS)
+if st.session_state.limpar_form:
+    st.session_state["responsavel"] = ""
+    st.session_state["id_assinatura"] = ""
+    st.session_state["rastreio"] = ""
+    st.session_state["detalhe"] = ""
+    st.session_state["limpar_form"] = False
+
 # 📝 FORMULÁRIO
 data = st.date_input("Data", value=date.today())
 
-responsavel = st.text_input(
-    "Responsável",
-    key="responsavel"
-)
+responsavel = st.text_input("Responsável", key="responsavel")
 
 email = st.text_input(
     "Email",
-    value=st.session_state.get("email", ""),
-    key="email"
+    value=st.session_state.get("email", "")
 )
 
-id_assinatura = st.text_input(
-    "ID Assinatura",
-    key="id_assinatura"
-)
+id_assinatura = st.text_input("ID Assinatura", key="id_assinatura")
 
-rastreio = st.text_input(
-    "Rastreio",
-    key="rastreio"
-)
+rastreio = st.text_input("Rastreio", key="rastreio")
 
 motivo = st.selectbox(
     "Motivo",
@@ -70,14 +68,10 @@ motivo = st.selectbox(
         "PROCON",
         "Duplicidade",
         "Correção de faturamento"
-    ],
-    key="motivo"
+    ]
 )
 
-detalhe = st.text_area(
-    "Detalhes",
-    key="detalhe"
-)
+detalhe = st.text_area("Detalhes", key="detalhe")
 
 # 🚀 ENVIO
 if st.button("Enviar"):
@@ -108,10 +102,7 @@ if st.button("Enviar"):
 
         st.success("✅ Solicitação enviada com sucesso!")
 
-        # 🔥 LIMPA CAMPOS (MENOS EMAIL)
-        st.session_state.responsavel = ""
-        st.session_state.id_assinatura = ""
-        st.session_state.rastreio = ""
-        st.session_state.detalhe = ""
+        # 🔥 ATIVA LIMPEZA
+        st.session_state.limpar_form = True
 
         st.rerun()
