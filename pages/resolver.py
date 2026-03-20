@@ -177,6 +177,7 @@ tabela = df[
     [
         "Data",
         "Responsavel",
+        "ID Assinatura",
         "Rastreio",
         "Motivo",
         "Status Visual"
