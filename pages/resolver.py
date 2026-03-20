@@ -1,7 +1,7 @@
 import streamlit as st
 
 if "logado" not in st.session_state or not st.session_state.logado:
-    st.warning("🔒 Faça login para acessar o sistema")
+    st.warning("🔒 Faça login para acessar")
     st.stop()
 
 import smtplib
