@@ -1,10 +1,4 @@
 import streamlit as st
-
-if "logado" not in st.session_state or not st.session_state.logado:
-    st.warning("🔒 Faça login para acessar o sistema")
-    st.stop()
-
-import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
@@ -12,7 +6,7 @@ from datetime import date
 
 st.title("📌 Solicitar Bloqueio de Pedido")
 
-# CONEXÃO GOOGLE SHEETS
+# CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -29,43 +23,40 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-# 🔥 CARREGA DADOS PARA VALIDAÇÃO
+# FORMULÁRIO
+data = st.date_input("Data da solicitação", value=date.today())
+responsavel = st.text_input("Responsável solicitante")
+email = st.text_input("Email do solicitante")
+
+id_assinatura = st.text_input("ID Assinatura")  # 👈 NOVO CAMPO
+
+rastreio = st.text_input("Rastreio do pedido")
+motivo = st.text_area("Motivo do bloqueio")
+
+# CARREGA DADOS PARA VALIDAR DUPLICIDADE
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
-# FORMULÁRIO
-with st.form("form_solicitacao", clear_on_submit=True):
+if st.button("Enviar solicitação"):
 
-    data = st.date_input("Data da solicitação", value=date.today())
-    responsavel = st.text_input("Responsável solicitante")
-    email = st.text_input("Email do solicitante")
-    rastreio = st.text_input("Rastreio do pedido")
-    motivo = st.text_area("Motivo do bloqueio")
+    if rastreio == "":
+        st.warning("Informe o rastreio")
 
-    enviar = st.form_submit_button("Enviar solicitação")
+    elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
+        st.warning("Já existe uma solicitação com este rastreio")
 
-    if enviar:
+    else:
 
-        if rastreio == "":
-            st.warning("⚠️ Informe o rastreio")
+        sheet.append_row([
+            str(data),
+            responsavel,
+            email,
+            id_assinatura,  # 👈 SALVANDO NOVO CAMPO
+            rastreio,
+            motivo,
+            "Pendente",
+            ""
+        ])
 
-        elif email == "":
-            st.warning("⚠️ Informe o email")
-
-        # 🔥 VALIDAÇÃO DE DUPLICIDADE
-        elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
-            st.warning("⚠️ Já existe uma solicitação com este código")
-
-        else:
-
-            sheet.append_row([
-                str(data),
-                responsavel,
-                email,
-                rastreio,
-                motivo,
-                "Pendente",
-                ""
-            ])
-
-            st.success("✅ Solicitação enviada com sucesso!")
+        st.success("✅ Solicitação enviada com sucesso!")
+        st.rerun()
