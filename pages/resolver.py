@@ -1,14 +1,3 @@
-import streamlit as st
-
-if "logado" not in st.session_state or not st.session_state.logado:
-    st.warning("🔒 Faça login para acessar")
-    st.stop()
-    
-# 🔒 BLOQUEIO DE DEPARTAMENTO
-if st.session_state.get("departamento", "").lower() == "atendimento":
-    st.warning("🚫 O departamento de Atendimento não possui permissão para resolver ocorrências.")
-    st.stop()
-
 import smtplib
 from email.mime.text import MIMEText
 
@@ -17,9 +6,17 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
+# 🔒 BLOQUEIO DE LOGIN
+if "logado" not in st.session_state or not st.session_state.logado:
+    st.warning("🔒 Faça login para acessar")
+    st.stop()
+
 st.title("🔧 Resolver Solicitações de Bloqueio")
 
-# CONEXÃO GOOGLE SHEETS
+# 🔒 CONTROLE DE PERMISSÃO
+bloqueado_resolucao = st.session_state.get("departamento", "").lower() == "atendimento"
+
+# 🔗 CONEXÃO GOOGLE
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -36,7 +33,7 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).sheet1
 
-# DADOS
+# 📊 DADOS
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
@@ -47,7 +44,7 @@ if df.empty:
     st.info("Nenhuma ocorrência registrada ainda.")
     st.stop()
 
-# MÉTRICAS
+# 📊 MÉTRICAS
 total = len(df)
 
 pendentes_df = df[
@@ -66,7 +63,7 @@ col2.metric("Pendentes 🟡", pendentes)
 col3.metric("Bloqueados 🟢", bloqueados)
 col4.metric("Não bloqueados 🔴", nao_bloqueados)
 
-# BUSCA
+# 🔎 BUSCA
 st.subheader("🔎 Buscar ocorrência")
 
 busca = st.text_input("Buscar pelo rastreio")
@@ -75,7 +72,7 @@ if busca:
     resultado_busca = df[df["Rastreio"].astype(str).str.contains(busca)]
     st.dataframe(resultado_busca, use_container_width=True)
 
-# RESOLVER
+# 🔧 RESOLVER
 st.subheader("Resolver ocorrência")
 
 if not pendentes_df.empty:
@@ -90,7 +87,13 @@ if not pendentes_df.empty:
         ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
     )
 
-    if st.button("Finalizar ocorrência"):
+    # 🔒 BLOQUEIO VISUAL
+    if bloqueado_resolucao:
+        st.warning("🚫 Você não tem permissão para resolver ocorrências.")
+
+    botao = st.button("Finalizar ocorrência", disabled=bloqueado_resolucao)
+
+    if botao and not bloqueado_resolucao:
 
         if acao == "Tratativa com a logística":
 
@@ -102,8 +105,7 @@ if not pendentes_df.empty:
             )
 
             st.warning("⚠️ Ocorrência enviada para tratativa logística")
-
-            st.rerun()  # 🔥 AQUI
+            st.rerun()
 
         else:
 
@@ -116,6 +118,7 @@ if not pendentes_df.empty:
                 [df.columns.values.tolist()] + df.values.tolist()
             )
 
+            # 📧 ENVIO DE EMAIL
             if email_cliente:
 
                 mensagem = f"""
@@ -152,12 +155,12 @@ Sistema de Bloqueio de Pedidos
             else:
                 st.success("Ocorrência finalizada! (sem email cadastrado)")
 
-            st.rerun()  # 🔥 AQUI TAMBÉM
+            st.rerun()
 
 else:
     st.info("Não existem ocorrências pendentes.")
 
-# HISTÓRICO
+# 📊 HISTÓRICO
 st.subheader("📊 Histórico de ocorrências")
 
 def status_color(row):
@@ -182,6 +185,7 @@ tabela = df[
     [
         "Data",
         "Responsavel",
+        "Email",
         "ID Assinatura",
         "Rastreio",
         "Motivo",
