@@ -30,16 +30,13 @@ df = pd.DataFrame(dados)
 # 📝 FORMULÁRIO
 data = st.date_input("Data da solicitação", value=date.today())
 
-responsavel = st.text_input(
-    "Responsável solicitante",
-    value=st.session_state.get("usuario", "")
-)
+# 👤 RESPONSÁVEL (MANUAL)
+responsavel = st.text_input("Responsável solicitante")
 
-# 🔥 EMAIL AUTOMÁTICO (DO LOGIN)
+# 📧 EMAIL (PREENCHIDO MAS EDITÁVEL)
 email = st.text_input(
     "Email do solicitante",
-    value=st.session_state.get("email", ""),
-    disabled=True
+    value=st.session_state.get("email", "")
 )
 
 id_assinatura = st.text_input("ID Assinatura")
@@ -70,6 +67,12 @@ if st.button("Enviar solicitação"):
     if rastreio == "":
         st.warning("Informe o rastreio")
 
+    elif responsavel.strip() == "":
+        st.warning("Informe o responsável")
+
+    elif email.strip() == "":
+        st.warning("Informe o email")
+
     elif not df.empty and rastreio in df["Rastreio"].astype(str).values:
         st.warning("Já existe uma solicitação com este rastreio")
 
@@ -83,8 +86,8 @@ if st.button("Enviar solicitação"):
 
         sheet.append_row([
             str(data),
-            responsavel,
-            st.session_state.get("email", ""),  # 👈 GARANTE EMAIL CORRETO
+            responsavel.strip(),
+            email.strip(),  # 👈 GARANTE QUE O EMAIL VAI CERTO
             id_assinatura,
             rastreio,
             motivo_final,
