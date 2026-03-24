@@ -4,14 +4,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import date
 
-# 🔒 BLOQUEIO
+# 🔒 LOGIN
 if "logado" not in st.session_state or not st.session_state.logado:
     st.warning("🔒 Faça login")
     st.stop()
 
 st.title("🏠 Solicitar Atualização de Endereço")
 
-# CONEXÃO
+# 🔗 CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -28,7 +28,30 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("enderecos")
 
-# FORMULÁRIO
+# 🔥 LEITURA SEGURA
+dados = sheet.get_all_values()
+
+if len(dados) < 2:
+    df = pd.DataFrame()
+else:
+    df = pd.DataFrame(dados[1:], columns=dados[0])
+
+# 🔥 NORMALIZAÇÃO
+if not df.empty:
+    df.columns = (
+        pd.Series(df.columns)
+        .str.strip()
+        .str.lower()
+        .str.replace("á", "a")
+        .str.replace("ã", "a")
+        .str.replace("ç", "c")
+        .str.replace("é", "e")
+        .str.replace("í", "i")
+        .str.replace("ó", "o")
+        .str.replace("ú", "u")
+    )
+
+# 📝 FORMULÁRIO
 data = st.date_input("Data", value=date.today())
 
 responsavel = st.text_input("Responsável")
@@ -45,17 +68,37 @@ cidade = st.text_input("Cidade")
 uf = st.text_input("UF")
 cep = st.text_input("CEP")
 
-# ENVIO
+# 🚀 ENVIO
 if st.button("Enviar solicitação"):
 
-    dados_atualizados = sheet.get_all_records()
-    df_atualizado = pd.DataFrame(dados_atualizados)
+    # 🔥 BUSCA ATUAL SEM CACHE
+    dados_atualizados = sheet.get_all_values()
+
+    if len(dados_atualizados) < 2:
+        df_atualizado = pd.DataFrame()
+    else:
+        df_atualizado = pd.DataFrame(dados_atualizados[1:], columns=dados_atualizados[0])
+
+    # 🔥 NORMALIZA
+    if not df_atualizado.empty:
+        df_atualizado.columns = (
+            pd.Series(df_atualizado.columns)
+            .str.strip()
+            .str.lower()
+            .str.replace("á", "a")
+            .str.replace("ã", "a")
+            .str.replace("ç", "c")
+            .str.replace("é", "e")
+            .str.replace("í", "i")
+            .str.replace("ó", "o")
+            .str.replace("ú", "u")
+        )
 
     if rastreio == "":
         st.warning("Informe o rastreio")
 
-    elif not df_atualizado.empty and rastreio in df_atualizado["Rastreio"].astype(str).values:
-        st.warning("Já existe solicitação para este rastreio")
+    elif "rastreio" in df_atualizado.columns and rastreio in df_atualizado["rastreio"].astype(str).values:
+        st.warning("🚫 Já existe solicitação para este rastreio")
 
     else:
 
@@ -76,5 +119,5 @@ if st.button("Enviar solicitação"):
             ""
         ])
 
-        st.success("Solicitação enviada!")
+        st.success("✅ Solicitação enviada!")
         st.rerun()
