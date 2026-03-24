@@ -27,17 +27,16 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("enderecos")
 
-# 🔥 LEITURA FORÇADA (SEM ERRO)
+# 🔥 LEITURA SEGURA
 dados = sheet.get_all_values()
 
 if len(dados) < 2:
-    st.warning("Nenhum dado encontrado na planilha.")
+    st.warning("Nenhum dado encontrado.")
     st.stop()
 
-# PRIMEIRA LINHA = CABEÇALHO
 df = pd.DataFrame(dados[1:], columns=dados[0])
 
-# 🔥 NORMALIZAÇÃO FORTE
+# 🔥 NORMALIZAÇÃO
 df.columns = (
     pd.Series(df.columns)
     .str.strip()
@@ -51,15 +50,32 @@ df.columns = (
     .str.replace("ú", "u")
 )
 
-# 🔍 DEBUG (pode apagar depois)
-# st.write("Colunas:", df.columns.tolist())
+# 🔍 =========================
+# 🔍 BUSCA DE RASTREIO
+# 🔍 =========================
+st.subheader("🔎 Buscar rastreio")
 
-# 🔒 VALIDAÇÃO
+busca = st.text_input("Digite o código de rastreio")
+
+if busca:
+
+    resultado_busca = df[df["rastreio"].astype(str).str.contains(busca)]
+
+    if not resultado_busca.empty:
+        st.success("Rastreio encontrado!")
+        st.dataframe(resultado_busca, use_container_width=True)
+    else:
+        st.warning("Nenhum resultado encontrado")
+
+st.divider()
+
+# 📌 RESOLUÇÃO
+st.subheader("Resolver ocorrência")
+
 if "status" not in df.columns:
-    st.error(f"Colunas encontradas: {df.columns.tolist()}")
+    st.error("Coluna 'Status' não encontrada.")
     st.stop()
 
-# 📌 FILTRO
 pendentes = df[df["status"] == "Pendente"]
 
 if not pendentes.empty:
@@ -79,7 +95,6 @@ if not pendentes.empty:
         df.loc[df["rastreio"] == rastreio, "status"] = "Finalizado"
         df.loc[df["rastreio"] == rastreio, "resultado"] = acao
 
-        # 🔄 ATUALIZA PLANILHA
         sheet.update([df.columns.tolist()] + df.values.tolist())
 
         st.success("✅ Atualização concluída!")
