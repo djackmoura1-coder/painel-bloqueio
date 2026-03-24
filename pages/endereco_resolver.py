@@ -98,11 +98,22 @@ if not pendentes.empty:
         df.loc[df["rastreio"] == rastreio, "status"] = "Finalizado"
         df.loc[df["rastreio"] == rastreio, "resultado"] = acao
 
+        # 🔥 PEGA EMAIL
         email_cliente = df.loc[df["rastreio"] == rastreio, "email"].values[0]
 
+        # 🔄 ATUALIZA PLANILHA
         sheet.update([df.columns.tolist()] + df.values.tolist())
 
-        # 📧 EMAIL
+        # 📧 MENSAGEM DINÂMICA
+        if acao == "Não atualizado":
+            mensagem_extra = """
+
+Não foi atualizado. Por favor, solicite ao cliente que recuse o pedido ou, se preferir, que seja feito um acordo dentro da resolução.
+"""
+        else:
+            mensagem_extra = ""
+
+        # 📧 ENVIO DE EMAIL
         if email_cliente:
 
             mensagem = f"""
@@ -111,6 +122,7 @@ Olá,
 A solicitação de atualização de endereço do pedido {rastreio} foi analisada.
 
 Resultado: {acao}
+{mensagem_extra}
 
 Sistema de Atualização de Endereço
 """
@@ -139,7 +151,7 @@ Sistema de Atualização de Endereço
                 st.warning("Atualizado, mas erro ao enviar email")
 
         else:
-            st.success("Atualização concluída (sem email)")
+            st.success("Atualização concluída (sem email cadastrado)")
 
         st.rerun()
 
