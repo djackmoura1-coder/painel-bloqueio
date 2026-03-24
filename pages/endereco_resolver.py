@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+import smtplib
+from email.mime.text import MIMEText
 
 # 🔒 LOGIN
 if "logado" not in st.session_state or not st.session_state.logado:
@@ -50,31 +52,23 @@ df.columns = (
     .str.replace("ú", "u")
 )
 
-# 🔍 =========================
-# 🔍 BUSCA DE RASTREIO
-# 🔍 =========================
+# 🔎 BUSCA
 st.subheader("🔎 Buscar rastreio")
 
 busca = st.text_input("Digite o código de rastreio")
 
 if busca:
-
     resultado_busca = df[df["rastreio"].astype(str).str.contains(busca)]
 
     if not resultado_busca.empty:
-        st.success("Rastreio encontrado!")
         st.dataframe(resultado_busca, use_container_width=True)
     else:
         st.warning("Nenhum resultado encontrado")
 
 st.divider()
 
-# 📌 RESOLUÇÃO
+# 🔧 RESOLVER
 st.subheader("Resolver ocorrência")
-
-if "status" not in df.columns:
-    st.error("Coluna 'Status' não encontrada.")
-    st.stop()
 
 pendentes = df[df["status"] == "Pendente"]
 
@@ -95,9 +89,51 @@ if not pendentes.empty:
         df.loc[df["rastreio"] == rastreio, "status"] = "Finalizado"
         df.loc[df["rastreio"] == rastreio, "resultado"] = acao
 
+        # 🔥 PEGA EMAIL
+        email_cliente = df.loc[df["rastreio"] == rastreio, "email"].values[0]
+
+        # 🔄 ATUALIZA PLANILHA
         sheet.update([df.columns.tolist()] + df.values.tolist())
 
-        st.success("✅ Atualização concluída!")
+        # 📧 ENVIO DE EMAIL
+        if email_cliente:
+
+            mensagem = f"""
+Olá,
+
+A solicitação de atualização de endereço do pedido {rastreio} foi analisada.
+
+Resultado: {acao}
+
+Sistema de Atualização de Endereço
+"""
+
+            msg = MIMEText(mensagem)
+            msg["Subject"] = "Atualização de endereço"
+            msg["From"] = "djackmoura1@gmail.com"
+            msg["To"] = email_cliente
+
+            try:
+                servidor = smtplib.SMTP("smtp.gmail.com", 587)
+                servidor.starttls()
+                servidor.login("djackmoura1@gmail.com", "xssw hyhl tjao eeyj")
+
+                servidor.sendmail(
+                    "djackmoura1@gmail.com",
+                    email_cliente,
+                    msg.as_string()
+                )
+
+                servidor.quit()
+
+                st.success("✅ Atualização concluída e email enviado!")
+
+            except:
+                st.warning("Atualizado, mas falha ao enviar email")
+
+        else:
+            st.success("Atualização concluída (sem email cadastrado)")
+
         st.rerun()
 
 else:
