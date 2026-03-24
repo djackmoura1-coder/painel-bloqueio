@@ -27,31 +27,36 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("enderecos")
 
-# 📊 DADOS
-df = pd.DataFrame(sheet.get_all_records())
+# 🔥 LEITURA FORÇADA (SEM ERRO)
+dados = sheet.get_all_values()
 
-# 🔥 NORMALIZAÇÃO DAS COLUNAS (ANTI-ERRO)
-if not df.empty:
-    df.columns = (
-        df.columns
-        .str.strip()
-        .str.lower()
-        .str.replace("á", "a")
-        .str.replace("ã", "a")
-        .str.replace("ç", "c")
-        .str.replace("é", "e")
-        .str.replace("í", "i")
-        .str.replace("ó", "o")
-        .str.replace("ú", "u")
-    )
+if len(dados) < 2:
+    st.warning("Nenhum dado encontrado na planilha.")
+    st.stop()
+
+# PRIMEIRA LINHA = CABEÇALHO
+df = pd.DataFrame(dados[1:], columns=dados[0])
+
+# 🔥 NORMALIZAÇÃO FORTE
+df.columns = (
+    pd.Series(df.columns)
+    .str.strip()
+    .str.lower()
+    .str.replace("á", "a")
+    .str.replace("ã", "a")
+    .str.replace("ç", "c")
+    .str.replace("é", "e")
+    .str.replace("í", "i")
+    .str.replace("ó", "o")
+    .str.replace("ú", "u")
+)
+
+# 🔍 DEBUG (pode apagar depois)
+# st.write("Colunas:", df.columns.tolist())
 
 # 🔒 VALIDAÇÃO
 if "status" not in df.columns:
-    st.error("❌ Coluna 'Status' não encontrada na planilha.")
-    st.stop()
-
-if "rastreio" not in df.columns:
-    st.error("❌ Coluna 'Rastreio' não encontrada.")
+    st.error(f"Colunas encontradas: {df.columns.tolist()}")
     st.stop()
 
 # 📌 FILTRO
@@ -84,10 +89,6 @@ else:
     st.info("Sem solicitações pendentes")
 
 # 📊 HISTÓRICO
-st.subheader("📊 Histórico de solicitações")
+st.subheader("📊 Histórico")
 
-st.dataframe(
-    df,
-    use_container_width=True,
-    hide_index=True
-)
+st.dataframe(df, use_container_width=True)
