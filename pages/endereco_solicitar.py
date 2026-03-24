@@ -28,61 +28,62 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("enderecos")
 
-# 🔥 LEITURA SEGURA
-dados = sheet.get_all_values()
+# 🔥 CONTROLE DE LIMPEZA
+if "limpar_form_endereco" not in st.session_state:
+    st.session_state.limpar_form_endereco = False
 
-if len(dados) < 2:
-    df = pd.DataFrame()
-else:
-    df = pd.DataFrame(dados[1:], columns=dados[0])
+# 🔥 LIMPEZA SEGURA (ANTES DOS CAMPOS)
+if st.session_state.limpar_form_endereco:
+    for campo in [
+        "responsavel",
+        "id_assinatura",
+        "rastreio",
+        "rua",
+        "numero",
+        "complemento",
+        "bairro",
+        "cidade",
+        "uf",
+        "cep"
+    ]:
+        if campo in st.session_state:
+            st.session_state[campo] = ""
 
-# 🔥 NORMALIZAÇÃO
-if not df.empty:
-    df.columns = (
-        pd.Series(df.columns)
-        .str.strip()
-        .str.lower()
-        .str.replace("á", "a")
-        .str.replace("ã", "a")
-        .str.replace("ç", "c")
-        .str.replace("é", "e")
-        .str.replace("í", "i")
-        .str.replace("ó", "o")
-        .str.replace("ú", "u")
-    )
+    st.session_state.limpar_form_endereco = False
 
 # 📝 FORMULÁRIO
 data = st.date_input("Data", value=date.today())
 
-responsavel = st.text_input("Responsável")
-email = st.text_input("Email", value=st.session_state.get("email", ""))
+responsavel = st.text_input("Responsável", key="responsavel")
 
-id_assinatura = st.text_input("ID Assinatura")
-rastreio = st.text_input("Rastreio")
+email = st.text_input(
+    "Email",
+    value=st.session_state.get("email", "")
+)
 
-rua = st.text_input("Rua")
-numero = st.text_input("Número")
-complemento = st.text_input("Complemento")
-bairro = st.text_input("Bairro")
-cidade = st.text_input("Cidade")
-uf = st.text_input("UF")
-cep = st.text_input("CEP")
+id_assinatura = st.text_input("ID Assinatura", key="id_assinatura")
+rastreio = st.text_input("Rastreio", key="rastreio")
+
+rua = st.text_input("Rua", key="rua")
+numero = st.text_input("Número", key="numero")
+complemento = st.text_input("Complemento", key="complemento")
+bairro = st.text_input("Bairro", key="bairro")
+cidade = st.text_input("Cidade", key="cidade")
+uf = st.text_input("UF", key="uf")
+cep = st.text_input("CEP", key="cep")
 
 # 🚀 ENVIO
 if st.button("Enviar solicitação"):
 
-    # 🔥 BUSCA ATUAL SEM CACHE
-    dados_atualizados = sheet.get_all_values()
+    dados = sheet.get_all_values()
 
-    if len(dados_atualizados) < 2:
-        df_atualizado = pd.DataFrame()
+    if len(dados) < 2:
+        df = pd.DataFrame()
     else:
-        df_atualizado = pd.DataFrame(dados_atualizados[1:], columns=dados_atualizados[0])
+        df = pd.DataFrame(dados[1:], columns=dados[0])
 
-    # 🔥 NORMALIZA
-    if not df_atualizado.empty:
-        df_atualizado.columns = (
-            pd.Series(df_atualizado.columns)
+        df.columns = (
+            pd.Series(df.columns)
             .str.strip()
             .str.lower()
             .str.replace("á", "a")
@@ -97,7 +98,7 @@ if st.button("Enviar solicitação"):
     if rastreio == "":
         st.warning("Informe o rastreio")
 
-    elif "rastreio" in df_atualizado.columns and rastreio in df_atualizado["rastreio"].astype(str).values:
+    elif "rastreio" in df.columns and rastreio in df["rastreio"].astype(str).values:
         st.warning("🚫 Já existe solicitação para este rastreio")
 
     else:
@@ -120,4 +121,8 @@ if st.button("Enviar solicitação"):
         ])
 
         st.success("✅ Solicitação enviada!")
+
+        # 🔥 ATIVA LIMPEZA
+        st.session_state.limpar_form_endereco = True
+
         st.rerun()
