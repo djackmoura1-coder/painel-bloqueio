@@ -12,6 +12,9 @@ if "logado" not in st.session_state or not st.session_state.logado:
 
 st.title("🔧 Resolver Atualização de Endereço")
 
+# 🔒 CONTROLE DE PERMISSÃO
+bloqueado_resolucao = st.session_state.get("departamento", "").lower() == "atendimento"
+
 # 🔗 CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -84,18 +87,22 @@ if not pendentes.empty:
         ["Atualizado", "Não atualizado"]
     )
 
-    if st.button("Finalizar"):
+    # 🔒 BLOQUEIO VISUAL
+    if bloqueado_resolucao:
+        st.warning("🚫 Você não tem permissão para finalizar ocorrências.")
+
+    botao = st.button("Finalizar", disabled=bloqueado_resolucao)
+
+    if botao and not bloqueado_resolucao:
 
         df.loc[df["rastreio"] == rastreio, "status"] = "Finalizado"
         df.loc[df["rastreio"] == rastreio, "resultado"] = acao
 
-        # 🔥 PEGA EMAIL
         email_cliente = df.loc[df["rastreio"] == rastreio, "email"].values[0]
 
-        # 🔄 ATUALIZA PLANILHA
         sheet.update([df.columns.tolist()] + df.values.tolist())
 
-        # 📧 ENVIO DE EMAIL
+        # 📧 EMAIL
         if email_cliente:
 
             mensagem = f"""
@@ -129,10 +136,10 @@ Sistema de Atualização de Endereço
                 st.success("✅ Atualização concluída e email enviado!")
 
             except:
-                st.warning("Atualizado, mas falha ao enviar email")
+                st.warning("Atualizado, mas erro ao enviar email")
 
         else:
-            st.success("Atualização concluída (sem email cadastrado)")
+            st.success("Atualização concluída (sem email)")
 
         st.rerun()
 
