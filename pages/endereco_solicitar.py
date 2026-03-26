@@ -52,9 +52,9 @@ if st.session_state.limpar_form_endereco:
 
     st.session_state.limpar_form_endereco = False
 
-# 🔥 CONTROLE CEP
-if "cep_valido" not in st.session_state:
-    st.session_state.cep_valido = False
+# 🔥 CONTROLE CEP (IMPORTANTE)
+if "cep_preenchido" not in st.session_state:
+    st.session_state.cep_preenchido = ""
 
 # 📝 FORMULÁRIO
 data = st.date_input("Data", value=date.today())
@@ -69,10 +69,10 @@ email = st.text_input(
 id_assinatura = st.text_input("ID Assinatura", key="id_assinatura")
 rastreio = st.text_input("Rastreio", key="rastreio")
 
-# 🔥 CEP INTELIGENTE
+# 🔥 CEP INTELIGENTE (CORRIGIDO)
 cep = st.text_input("CEP", key="cep")
 
-if cep and len(cep.replace("-", "")) == 8:
+if cep and len(cep.replace("-", "")) == 8 and cep != st.session_state.cep_preenchido:
 
     try:
         url = f"https://viacep.com.br/ws/{cep}/json/"
@@ -83,26 +83,31 @@ if cep and len(cep.replace("-", "")) == 8:
 
             if "erro" not in dados_cep:
 
-                st.session_state["rua"] = dados_cep.get("logradouro", "")
-                st.session_state["bairro"] = dados_cep.get("bairro", "")
-                st.session_state["cidade"] = dados_cep.get("localidade", "")
-                st.session_state["uf"] = dados_cep.get("uf", "")
+                # 🔥 SÓ PREENCHE SE ESTIVER VAZIO (NÃO SOBRESCREVE)
+                if not st.session_state.get("rua"):
+                    st.session_state["rua"] = dados_cep.get("logradouro", "")
 
-                st.session_state.cep_valido = True
+                if not st.session_state.get("bairro"):
+                    st.session_state["bairro"] = dados_cep.get("bairro", "")
+
+                if not st.session_state.get("cidade"):
+                    st.session_state["cidade"] = dados_cep.get("localidade", "")
+
+                if not st.session_state.get("uf"):
+                    st.session_state["uf"] = dados_cep.get("uf", "")
+
+                st.session_state.cep_preenchido = cep
 
             else:
                 st.warning("❌ CEP não encontrado. Preencha manualmente.")
-                st.session_state.cep_valido = False
 
         else:
             st.warning("⚠️ Erro ao consultar CEP")
-            st.session_state.cep_valido = False
 
     except:
         st.warning("⚠️ Falha ao consultar CEP")
-        st.session_state.cep_valido = False
 
-# 📝 CAMPOS DE ENDEREÇO
+# 📝 CAMPOS DE ENDEREÇO (EDITÁVEIS)
 rua = st.text_input("Rua", key="rua")
 numero = st.text_input("Número", key="numero")
 complemento = st.text_input("Complemento", key="complemento")
