@@ -40,6 +40,7 @@ if df.empty:
 # 🔍 PRODUTO
 produto = st.selectbox("Selecione o produto", df["Produto"])
 
+# 📦 ESTOQUE ATUAL
 estoque_atual = df[df["Produto"] == produto]["Quantidade_inicial"].values[0]
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
@@ -55,19 +56,19 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("➕ Adicionar estoque"):
 
-        nova_qtd = estoque_atual + quantidade
+        nova_qtd = int(estoque_atual) + int(quantidade)
 
         df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
         sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
-        # 🔥 REGISTRO
+        # 🔥 REGISTRO NO HISTÓRICO
         sheet_log.append_row([
             str(datetime.now()),
-            st.session_state.get("usuario"),
-            produto,
+            str(st.session_state.get("usuario")),
+            str(produto),
             "Entrada",
-            quantidade,
-            nova_qtd
+            int(quantidade),
+            int(nova_qtd)
         ])
 
         st.success(f"✅ Entrada realizada! Novo estoque: {nova_qtd}")
@@ -77,28 +78,29 @@ with col1:
 with col2:
     if st.button("➖ Dar baixa"):
 
-        if quantidade > estoque_atual:
+        if int(quantidade) > int(estoque_atual):
             st.error("❌ Quantidade maior que o estoque disponível")
 
         else:
-            nova_qtd = estoque_atual - quantidade
+            nova_qtd = int(estoque_atual) - int(quantidade)
 
             df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
-            # 🔥 REGISTRO
+            # 🔥 REGISTRO NO HISTÓRICO
             sheet_log.append_row([
                 str(datetime.now()),
-                st.session_state.get("usuario"),
-                produto,
+                str(st.session_state.get("usuario")),
+                str(produto),
                 "Baixa",
-                quantidade,
-                nova_qtd
+                int(quantidade),
+                int(nova_qtd)
             ])
 
             st.success(f"✅ Baixa realizada! Novo estoque: {nova_qtd}")
             st.rerun()
 
-# 📊 VISUAL
+# 📊 VISUALIZAÇÃO
 st.subheader("📊 Estoque Atual")
+
 st.dataframe(df, use_container_width=True)
