@@ -122,16 +122,8 @@ else:
     consumido = 0
 
 # ===============================
-# 🔥 PERCENTUAIS CORRETOS
+# 📊 RESTANTE (%)
 # ===============================
-
-# 🔹 Consumido (base fixa)
-if quantidade_base > 0:
-    percentual_consumido = (consumido / quantidade_base) * 100
-else:
-    percentual_consumido = 0
-
-# 🔹 Restante (dinâmico baseado no estoque)
 if quantidade_total > 0:
     percentual_restante = (estoque_atual / quantidade_total) * 100
 else:
@@ -151,10 +143,10 @@ with col2:
     st.metric("📊 Total Disponível", quantidade_total)
 
 with col3:
-    st.metric("🔥 Consumido", f"{percentual_consumido:.1f}%")
+    st.metric("🔥 Consumido (Qtd)", consumido)
 
 with col4:
-    st.metric("⏳ Restante", f"{percentual_restante:.1f}%")
+    st.metric("⏳ Restante (%)", f"{percentual_restante:.1f}%")
 
 st.divider()
 
