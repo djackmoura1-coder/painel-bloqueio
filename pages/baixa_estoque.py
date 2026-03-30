@@ -55,7 +55,7 @@ percentual_meta = to_int(linha.get("Percentual", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
-# 🔥 CALCULO REAL (BASEADO NO HISTÓRICO)
+# 🔥 HISTÓRICO DE BAIXA (CONSUMO REAL)
 dados_log = sheet_log.get_all_records()
 df_log = pd.DataFrame(dados_log)
 
@@ -70,27 +70,33 @@ if not df_log.empty:
 else:
     consumido = 0
 
-# 🔥 PERCENTUAIS
-if quantidade_total > 0:
-    percentual_consumido = (consumido / quantidade_total) * 100
-else:
-    percentual_consumido = 0
+# 🔥 META EM QUANTIDADE
+meta_qtd = (quantidade_total * percentual_meta) / 100
 
-percentual_restante = 100 - percentual_consumido
+# 🔥 EXECUÇÃO DA META
+if meta_qtd > 0:
+    percentual_execucao_meta = (consumido / meta_qtd) * 100
+else:
+    percentual_execucao_meta = 0
+
+percentual_restante_meta = 100 - percentual_execucao_meta
 
 # 🎯 DASH
 st.subheader("📊 Controle de Produção")
 
-col_a, col_b, col_c = st.columns(3)
+col_a, col_b, col_c, col_d = st.columns(4)
 
 with col_a:
     st.metric("📦 Total", quantidade_total)
 
 with col_b:
-    st.metric("✅ Consumido", f"{percentual_consumido:.1f}%")
+    st.metric("🎯 Meta (%)", f"{percentual_meta}%")
 
 with col_c:
-    st.metric("⏳ Restante", f"{percentual_restante:.1f}%")
+    st.metric("🔥 Execução da Meta", f"{percentual_execucao_meta:.1f}%")
+
+with col_d:
+    st.metric("⏳ Restante da Meta", f"{percentual_restante_meta:.1f}%")
 
 st.divider()
 
@@ -108,7 +114,6 @@ with col1:
         df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
         sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
-        # 🔥 HISTÓRICO
         sheet_log.append_row([
             str(datetime.now()),
             str(st.session_state.get("usuario")),
@@ -134,7 +139,6 @@ with col2:
             df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
-            # 🔥 HISTÓRICO
             sheet_log.append_row([
                 str(datetime.now()),
                 str(st.session_state.get("usuario")),
