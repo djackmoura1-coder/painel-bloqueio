@@ -43,12 +43,40 @@ produto = st.selectbox("Selecione o produto", df["Produto"])
 # 📦 ESTOQUE ATUAL
 estoque_atual = df[df["Produto"] == produto]["Quantidade_inicial"].values[0]
 
+# 🔥 NOVOS CAMPOS
+quantidade_total = df[df["Produto"] == produto]["Quantidade_total"].values[0]
+percentual_meta = df[df["Produto"] == produto]["Percentual"].values[0]
+
 st.info(f"📦 Estoque atual: {estoque_atual}")
+
+# 🔥 CALCULO DE PERFORMANCE
+consumido = int(quantidade_total) - int(estoque_atual)
+
+if int(quantidade_total) > 0:
+    percentual_consumido = (consumido / int(quantidade_total)) * 100
+else:
+    percentual_consumido = 0
+
+percentual_restante = 100 - percentual_consumido
+
+# 🎯 DASH DE CONTROLE
+st.subheader("📊 Controle de Produção")
+
+col_a, col_b, col_c = st.columns(3)
+
+with col_a:
+    st.metric("📦 Total", quantidade_total)
+
+with col_b:
+    st.metric("✅ Consumido", f"{percentual_consumido:.1f}%")
+
+with col_c:
+    st.metric("⏳ Restante", f"{percentual_restante:.1f}%")
+
+st.divider()
 
 # 🔢 QUANTIDADE
 quantidade = st.number_input("Quantidade", min_value=1)
-
-st.divider()
 
 col1, col2 = st.columns(2)
 
@@ -61,7 +89,7 @@ with col1:
         df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
         sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
-        # 🔥 REGISTRO NO HISTÓRICO
+        # 🔥 HISTÓRICO
         sheet_log.append_row([
             str(datetime.now()),
             str(st.session_state.get("usuario")),
@@ -87,7 +115,7 @@ with col2:
             df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
-            # 🔥 REGISTRO NO HISTÓRICO
+            # 🔥 HISTÓRICO
             sheet_log.append_row([
                 str(datetime.now()),
                 str(st.session_state.get("usuario")),
