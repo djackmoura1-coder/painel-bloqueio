@@ -11,6 +11,17 @@ if "logado" not in st.session_state or not st.session_state.logado:
 
 st.title("📦 Movimentação de Estoque")
 
+# 🔐 CONTROLE DE PERMISSÃO
+departamento = str(st.session_state.get("departamento", "")).lower()
+
+if departamento in ["atendimento", "faturamento"]:
+    pode_editar = False
+else:
+    pode_editar = True
+
+if not pode_editar:
+    st.warning("🔒 Você possui acesso apenas de visualização")
+
 # 🔗 CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -38,58 +49,40 @@ st.subheader("⚠️ Reset Completo da Operação")
 col_reset1, col_reset2 = st.columns([2,1])
 
 with col_reset2:
-    if st.button("🗑️ RESET TOTAL", use_container_width=True):
+    if st.button("🗑️ RESET TOTAL", use_container_width=True, disabled=not pode_editar):
 
-        confirmar = st.checkbox("Confirmar exclusão TOTAL (não pode desfazer)")
+        confirmar = st.checkbox("Confirmar exclusão TOTAL")
 
         if confirmar:
-            try:
-                # limpa histórico
-                sheet_log.clear()
-                sheet_log.append_row([
-                    "Data","Usuario","Produto","Tipo","Quantidade","Estoque_final"
-                ])
+            sheet_log.clear()
+            sheet_log.append_row(["Data","Usuario","Produto","Tipo","Quantidade","Estoque_final"])
 
-                # limpa produtos
-                sheet_produtos.clear()
-                sheet_produtos.append_row([
-                    "Produto","Trilha","Quantidade_inicial","Quantidade_total","Quantidade_base"
-                ])
+            sheet_produtos.clear()
+            sheet_produtos.append_row([
+                "Produto","Trilha","Quantidade_inicial","Quantidade_total","Quantidade_base"
+            ])
 
-                st.success("✅ Sistema resetado com sucesso!")
-                st.rerun()
-
-            except:
-                st.error("Erro ao executar reset")
+            st.success("Sistema resetado!")
+            st.rerun()
 
 st.divider()
 
 # ===============================
-# 📊 DADOS PRODUTOS
+# 📊 DADOS
 # ===============================
 dados = sheet_produtos.get_all_records()
-
-if len(dados) == 0:
-    df = pd.DataFrame()
-else:
-    df = pd.DataFrame(dados)
+df = pd.DataFrame(dados)
 
 if df.empty:
-    st.warning("Nenhum produto cadastrado. Sistema vazio após reset.")
+    st.warning("Nenhum produto cadastrado.")
     st.stop()
 
-# ===============================
-# 🔧 FUNÇÃO SEGURA
-# ===============================
 def to_int(valor):
     try:
         return int(float(valor))
     except:
         return 0
 
-# ===============================
-# 🔍 PRODUTO
-# ===============================
 produto = st.selectbox("Selecione o produto", df["Produto"])
 
 linha = df[df["Produto"] == produto].iloc[0]
@@ -101,70 +94,49 @@ quantidade_base = to_int(linha.get("Quantidade_base", 0))
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
 # ===============================
-# 📊 CONSUMO (HISTÓRICO)
+# 📊 CONSUMO
 # ===============================
 dados_log = sheet_log.get_all_records()
-
-if len(dados_log) == 0:
-    df_log = pd.DataFrame()
-else:
-    df_log = pd.DataFrame(dados_log)
+df_log = pd.DataFrame(dados_log)
 
 if not df_log.empty:
-    df_log = df_log[df_log["Produto"] == produto]
-    df_log = df_log[df_log["Tipo"] == "Baixa"]
-
-    if not df_log.empty:
-        consumido = df_log["Quantidade"].apply(to_int).sum()
-    else:
-        consumido = 0
+    df_log = df_log[(df_log["Produto"] == produto) & (df_log["Tipo"] == "Baixa")]
+    consumido = df_log["Quantidade"].apply(to_int).sum() if not df_log.empty else 0
 else:
     consumido = 0
 
 # ===============================
-# 📊 RESTANTE (%)
+# 📊 RESTANTE
 # ===============================
-if quantidade_total > 0:
-    percentual_restante = (estoque_atual / quantidade_total) * 100
-else:
-    percentual_restante = 0
+percentual_restante = (estoque_atual / quantidade_total * 100) if quantidade_total > 0 else 0
 
 # ===============================
 # 🎯 DASH
 # ===============================
-st.subheader("📊 Controle de Consumo")
+st.subheader("📊 Controle")
 
 col1, col2, col3, col4 = st.columns(4)
 
-with col1:
-    st.metric("📦 Estoque Atual", estoque_atual)
-
-with col2:
-    st.metric("📊 Total Disponível", quantidade_total)
-
-with col3:
-    st.metric("🔥 Consumido (Qtd)", consumido)
-
-with col4:
-    st.metric("⏳ Restante (%)", f"{percentual_restante:.1f}%")
+col1.metric("Estoque", estoque_atual)
+col2.metric("Total", quantidade_total)
+col3.metric("Consumido", consumido)
+col4.metric("Restante (%)", f"{percentual_restante:.1f}%")
 
 st.divider()
 
 # ===============================
-# 🔢 QUANTIDADE
+# 🔢 INPUT
 # ===============================
-quantidade = st.number_input("Quantidade", min_value=1)
+quantidade = st.number_input("Quantidade", min_value=1, disabled=not pode_editar)
 
 col_a, col_b = st.columns(2)
 
-# ===============================
 # ➕ ENTRADA
-# ===============================
 with col_a:
-    if st.button("➕ Adicionar estoque"):
+    if st.button("➕ Entrada", disabled=not pode_editar):
 
-        nova_qtd = estoque_atual + int(quantidade)
-        novo_total = quantidade_total + int(quantidade)
+        nova_qtd = estoque_atual + quantidade
+        novo_total = quantidade_total + quantidade
 
         df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
         df.loc[df["Produto"] == produto, "Quantidade_total"] = novo_total
@@ -173,46 +145,37 @@ with col_a:
 
         sheet_log.append_row([
             str(datetime.now()),
-            str(st.session_state.get("usuario")),
-            str(produto),
+            st.session_state.get("usuario"),
+            produto,
             "Entrada",
-            int(quantidade),
-            int(nova_qtd)
+            quantidade,
+            nova_qtd
         ])
 
-        st.success(f"Entrada realizada! Novo estoque: {nova_qtd}")
         st.rerun()
 
-# ===============================
 # ➖ BAIXA
-# ===============================
 with col_b:
-    if st.button("➖ Dar baixa"):
+    if st.button("➖ Baixa", disabled=not pode_editar):
 
-        if int(quantidade) > estoque_atual:
+        if quantidade > estoque_atual:
             st.error("Quantidade maior que o estoque")
-
         else:
-            nova_qtd = estoque_atual - int(quantidade)
+            nova_qtd = estoque_atual - quantidade
 
             df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
-
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
             sheet_log.append_row([
                 str(datetime.now()),
-                str(st.session_state.get("usuario")),
-                str(produto),
+                st.session_state.get("usuario"),
+                produto,
                 "Baixa",
-                int(quantidade),
-                int(nova_qtd)
+                quantidade,
+                nova_qtd
             ])
 
-            st.success(f"Baixa realizada! Novo estoque: {nova_qtd}")
             st.rerun()
 
-# ===============================
-# 📊 VISUAL
-# ===============================
-st.subheader("📊 Estoque Atual")
-st.dataframe(df, use_container_width=True)
+st.subheader("📊 Estoque")
+st.dataframe(df)
