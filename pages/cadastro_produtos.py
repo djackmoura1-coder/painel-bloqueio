@@ -36,17 +36,12 @@ produto = st.text_input("Nome do produto")
 
 trilha = st.selectbox(
     "Trilha",
-    [
-        "Gato",
-        "Essencial",
-        "Extra petisco",
-        "Extra brinquedo",
-        "Natural",
-        "Mordedor"
-    ]
+    ["Gato", "Essencial", "Extra petisco", "Extra brinquedo", "Natural", "Mordedor"]
 )
 
 quantidade = st.number_input("Quantidade inicial", min_value=0)
+
+percentual = st.number_input("Percentual (%)", min_value=0, max_value=100)
 
 # 🚀 CADASTRO
 if st.button("Cadastrar produto"):
@@ -62,7 +57,9 @@ if st.button("Cadastrar produto"):
         sheet.append_row([
             produto,
             trilha,
-            quantidade
+            quantidade,   # estoque atual
+            quantidade,   # estoque total
+            percentual
         ])
 
         st.success("Produto cadastrado com sucesso!")
@@ -70,5 +67,4 @@ if st.button("Cadastrar produto"):
 
 # 📊 LISTA
 st.subheader("📊 Produtos cadastrados")
-
 st.dataframe(df, use_container_width=True)
