@@ -10,6 +10,17 @@ if "logado" not in st.session_state or not st.session_state.logado:
 
 st.title("📦 Cadastro de Produtos")
 
+# 🔐 CONTROLE DE PERMISSÃO
+departamento = str(st.session_state.get("departamento", "")).lower()
+
+if departamento in ["atendimento", "faturamento"]:
+    pode_editar = False
+else:
+    pode_editar = True
+
+if not pode_editar:
+    st.warning("🔒 Apenas visualização")
+
 # 🔗 CONEXÃO
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -30,34 +41,27 @@ sheet = client.open_by_key(
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
-produto = st.text_input("Nome do produto")
+produto = st.text_input("Produto", disabled=not pode_editar)
 
 trilha = st.selectbox(
     "Trilha",
-    ["Gato", "Essencial", "Extra petisco", "Extra brinquedo", "Natural", "Mordedor"]
+    ["Gato","Essencial","Extra petisco","Extra brinquedo","Natural","Mordedor"],
+    disabled=not pode_editar
 )
 
-quantidade = st.number_input("Quantidade inicial", min_value=0)
+quantidade = st.number_input("Quantidade inicial", min_value=0, disabled=not pode_editar)
 
-if st.button("Cadastrar produto"):
+if st.button("Cadastrar", disabled=not pode_editar):
 
-    if produto == "":
-        st.warning("Informe o produto")
+    sheet.append_row([
+        produto,
+        trilha,
+        quantidade,
+        quantidade,
+        quantidade
+    ])
 
-    elif not df.empty and produto in df["Produto"].values:
-        st.warning("Produto já existe")
+    st.rerun()
 
-    else:
-
-        sheet.append_row([
-            produto,
-            trilha,
-            quantidade,
-            quantidade  # total fixo
-        ])
-
-        st.success("Produto cadastrado!")
-        st.rerun()
-
-st.subheader("📊 Produtos cadastrados")
-st.dataframe(df, use_container_width=True)
+st.subheader("📊 Produtos")
+st.dataframe(df)
