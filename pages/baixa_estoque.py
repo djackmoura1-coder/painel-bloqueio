@@ -44,24 +44,16 @@ with col_reset2:
 
         if confirmar:
             try:
-                # 🔥 LIMPA HISTÓRICO
+                # limpa histórico
                 sheet_log.clear()
                 sheet_log.append_row([
-                    "Data",
-                    "Usuario",
-                    "Produto",
-                    "Tipo",
-                    "Quantidade",
-                    "Estoque_final"
+                    "Data","Usuario","Produto","Tipo","Quantidade","Estoque_final"
                 ])
 
-                # 🔥 LIMPA PRODUTOS
+                # limpa produtos
                 sheet_produtos.clear()
                 sheet_produtos.append_row([
-                    "Produto",
-                    "Trilha",
-                    "Quantidade_inicial",
-                    "Quantidade_total"
+                    "Produto","Trilha","Quantidade_inicial","Quantidade_total"
                 ])
 
                 st.success("✅ Sistema resetado com sucesso!")
@@ -82,13 +74,12 @@ if len(dados) == 0:
 else:
     df = pd.DataFrame(dados)
 
-# 🔥 SE NÃO TEM PRODUTO → PARA A TELA
 if df.empty:
     st.warning("Nenhum produto cadastrado. Sistema vazio após reset.")
     st.stop()
 
 # ===============================
-# 🔥 FUNÇÃO SEGURA
+# 🔧 FUNÇÃO SEGURA
 # ===============================
 def to_int(valor):
     try:
@@ -109,7 +100,7 @@ quantidade_total = to_int(linha.get("Quantidade_total", 0))
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
 # ===============================
-# 🔥 HISTÓRICO
+# 📊 CONSUMO (HISTÓRICO)
 # ===============================
 dados_log = sheet_log.get_all_records()
 
@@ -130,7 +121,7 @@ else:
     consumido = 0
 
 # ===============================
-# 🔥 PERCENTUAL
+# 📊 PERCENTUAL
 # ===============================
 if quantidade_total > 0:
     percentual_consumido = (consumido / quantidade_total) * 100
@@ -171,8 +162,11 @@ with col_a:
     if st.button("➕ Adicionar estoque"):
 
         nova_qtd = estoque_atual + int(quantidade)
+        novo_total = quantidade_total + int(quantidade)
 
         df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
+        df.loc[df["Produto"] == produto, "Quantidade_total"] = novo_total
+
         sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
         sheet_log.append_row([
@@ -200,6 +194,7 @@ with col_b:
             nova_qtd = estoque_atual - int(quantidade)
 
             df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
+
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
             sheet_log.append_row([
@@ -218,8 +213,4 @@ with col_b:
 # 📊 VISUAL
 # ===============================
 st.subheader("📊 Estoque Atual")
-
-if df.empty:
-    st.info("Nenhum produto cadastrado")
-else:
-    st.dataframe(df, use_container_width=True)
+st.dataframe(df, use_container_width=True)
