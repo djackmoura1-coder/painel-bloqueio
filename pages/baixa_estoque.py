@@ -73,23 +73,32 @@ with col_reset2:
 st.divider()
 
 # ===============================
-# 📊 DADOS
+# 📊 DADOS PRODUTOS
 # ===============================
 dados = sheet_produtos.get_all_records()
-df = pd.DataFrame(dados)
 
+if len(dados) == 0:
+    df = pd.DataFrame()
+else:
+    df = pd.DataFrame(dados)
+
+# 🔥 SE NÃO TEM PRODUTO → PARA A TELA
 if df.empty:
-    st.warning("Nenhum produto cadastrado")
+    st.warning("Nenhum produto cadastrado. Sistema vazio após reset.")
     st.stop()
 
+# ===============================
 # 🔥 FUNÇÃO SEGURA
+# ===============================
 def to_int(valor):
     try:
         return int(float(valor))
     except:
         return 0
 
+# ===============================
 # 🔍 PRODUTO
+# ===============================
 produto = st.selectbox("Selecione o produto", df["Produto"])
 
 linha = df[df["Produto"] == produto].iloc[0]
@@ -100,10 +109,14 @@ quantidade_total = to_int(linha.get("Quantidade_total", 0))
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
 # ===============================
-# 🔥 CONSUMO REAL
+# 🔥 HISTÓRICO
 # ===============================
 dados_log = sheet_log.get_all_records()
-df_log = pd.DataFrame(dados_log)
+
+if len(dados_log) == 0:
+    df_log = pd.DataFrame()
+else:
+    df_log = pd.DataFrame(dados_log)
 
 if not df_log.empty:
     df_log = df_log[df_log["Produto"] == produto]
@@ -151,7 +164,9 @@ quantidade = st.number_input("Quantidade", min_value=1)
 
 col_a, col_b = st.columns(2)
 
+# ===============================
 # ➕ ENTRADA
+# ===============================
 with col_a:
     if st.button("➕ Adicionar estoque"):
 
@@ -172,7 +187,9 @@ with col_a:
         st.success(f"Entrada realizada! Novo estoque: {nova_qtd}")
         st.rerun()
 
+# ===============================
 # ➖ BAIXA
+# ===============================
 with col_b:
     if st.button("➖ Dar baixa"):
 
@@ -201,4 +218,8 @@ with col_b:
 # 📊 VISUAL
 # ===============================
 st.subheader("📊 Estoque Atual")
-st.dataframe(df, use_container_width=True)
+
+if df.empty:
+    st.info("Nenhum produto cadastrado")
+else:
+    st.dataframe(df, use_container_width=True)
