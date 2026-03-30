@@ -29,7 +29,44 @@ spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
 sheet_produtos = spreadsheet.worksheet("produtos")
 sheet_log = spreadsheet.worksheet("movimentacoes")
 
+# ===============================
+# 🔥 BOTÃO LIMPAR HISTÓRICO
+# ===============================
+st.divider()
+st.subheader("⚠️ Controle de Histórico")
+
+col_reset1, col_reset2 = st.columns([2,1])
+
+with col_reset2:
+    if st.button("🗑️ Limpar histórico", use_container_width=True):
+
+        confirmar = st.checkbox("Confirmar exclusão total")
+
+        if confirmar:
+            try:
+                sheet_log.clear()
+
+                # recria cabeçalho
+                sheet_log.append_row([
+                    "Data",
+                    "Usuario",
+                    "Produto",
+                    "Tipo",
+                    "Quantidade",
+                    "Estoque_final"
+                ])
+
+                st.success("✅ Histórico apagado com sucesso!")
+                st.rerun()
+
+            except:
+                st.error("Erro ao limpar histórico")
+
+st.divider()
+
+# ===============================
 # 📊 DADOS
+# ===============================
 dados = sheet_produtos.get_all_records()
 df = pd.DataFrame(dados)
 
@@ -54,7 +91,9 @@ quantidade_total = to_int(linha.get("Quantidade_total", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
-# 🔥 CONSUMO REAL PELO HISTÓRICO
+# ===============================
+# 🔥 CONSUMO REAL
+# ===============================
 dados_log = sheet_log.get_all_records()
 df_log = pd.DataFrame(dados_log)
 
@@ -69,7 +108,9 @@ if not df_log.empty:
 else:
     consumido = 0
 
-# 🔥 PERCENTUAL REAL
+# ===============================
+# 🔥 PERCENTUAL
+# ===============================
 if quantidade_total > 0:
     percentual_consumido = (consumido / quantidade_total) * 100
 else:
@@ -77,7 +118,9 @@ else:
 
 percentual_restante = 100 - percentual_consumido
 
+# ===============================
 # 🎯 DASH
+# ===============================
 st.subheader("📊 Controle de Consumo")
 
 col1, col2, col3 = st.columns(3)
@@ -93,12 +136,16 @@ with col3:
 
 st.divider()
 
+# ===============================
 # 🔢 QUANTIDADE
+# ===============================
 quantidade = st.number_input("Quantidade", min_value=1)
 
 col_a, col_b = st.columns(2)
 
+# ===============================
 # ➕ ENTRADA
+# ===============================
 with col_a:
     if st.button("➕ Adicionar estoque"):
 
@@ -116,15 +163,17 @@ with col_a:
             int(nova_qtd)
         ])
 
-        st.success(f"Entrada realizada! Novo estoque: {nova_qtd}")
+        st.success(f"✅ Entrada realizada! Novo estoque: {nova_qtd}")
         st.rerun()
 
+# ===============================
 # ➖ BAIXA
+# ===============================
 with col_b:
     if st.button("➖ Dar baixa"):
 
         if int(quantidade) > estoque_atual:
-            st.error("Quantidade maior que o estoque")
+            st.error("❌ Quantidade maior que o estoque")
 
         else:
             nova_qtd = estoque_atual - int(quantidade)
@@ -141,9 +190,11 @@ with col_b:
                 int(nova_qtd)
             ])
 
-            st.success(f"Baixa realizada! Novo estoque: {nova_qtd}")
+            st.success(f"✅ Baixa realizada! Novo estoque: {nova_qtd}")
             st.rerun()
 
+# ===============================
 # 📊 VISUAL
+# ===============================
 st.subheader("📊 Estoque Atual")
 st.dataframe(df, use_container_width=True)
