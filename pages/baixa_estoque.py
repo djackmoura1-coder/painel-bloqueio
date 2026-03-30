@@ -53,7 +53,7 @@ with col_reset2:
                 # limpa produtos
                 sheet_produtos.clear()
                 sheet_produtos.append_row([
-                    "Produto","Trilha","Quantidade_inicial","Quantidade_total"
+                    "Produto","Trilha","Quantidade_inicial","Quantidade_total","Quantidade_base"
                 ])
 
                 st.success("✅ Sistema resetado com sucesso!")
@@ -96,6 +96,7 @@ linha = df[df["Produto"] == produto].iloc[0]
 
 estoque_atual = to_int(linha.get("Quantidade_inicial", 0))
 quantidade_total = to_int(linha.get("Quantidade_total", 0))
+quantidade_base = to_int(linha.get("Quantidade_base", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
@@ -121,10 +122,10 @@ else:
     consumido = 0
 
 # ===============================
-# 📊 PERCENTUAL
+# 📊 PERCENTUAL (BASE FIXA)
 # ===============================
-if quantidade_total > 0:
-    percentual_consumido = (consumido / quantidade_total) * 100
+if quantidade_base > 0:
+    percentual_consumido = (consumido / quantidade_base) * 100
 else:
     percentual_consumido = 0
 
@@ -135,15 +136,18 @@ percentual_restante = 100 - percentual_consumido
 # ===============================
 st.subheader("📊 Controle de Consumo")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("📦 Total", quantidade_total)
+    st.metric("📦 Estoque Atual", estoque_atual)
 
 with col2:
-    st.metric("🔥 Consumido", f"{percentual_consumido:.1f}%")
+    st.metric("📊 Total Disponível", quantidade_total)
 
 with col3:
+    st.metric("🔥 Consumido", f"{percentual_consumido:.1f}%")
+
+with col4:
     st.metric("⏳ Restante", f"{percentual_restante:.1f}%")
 
 st.divider()
