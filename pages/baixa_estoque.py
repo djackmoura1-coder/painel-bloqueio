@@ -30,23 +30,22 @@ sheet_produtos = spreadsheet.worksheet("produtos")
 sheet_log = spreadsheet.worksheet("movimentacoes")
 
 # ===============================
-# 🔥 BOTÃO LIMPAR HISTÓRICO
+# 🔥 RESET TOTAL
 # ===============================
 st.divider()
-st.subheader("⚠️ Controle de Histórico")
+st.subheader("⚠️ Reset Completo da Operação")
 
 col_reset1, col_reset2 = st.columns([2,1])
 
 with col_reset2:
-    if st.button("🗑️ Limpar histórico", use_container_width=True):
+    if st.button("🗑️ RESET TOTAL", use_container_width=True):
 
-        confirmar = st.checkbox("Confirmar exclusão total")
+        confirmar = st.checkbox("Confirmar exclusão TOTAL (não pode desfazer)")
 
         if confirmar:
             try:
+                # 🔥 LIMPA HISTÓRICO
                 sheet_log.clear()
-
-                # recria cabeçalho
                 sheet_log.append_row([
                     "Data",
                     "Usuario",
@@ -56,11 +55,20 @@ with col_reset2:
                     "Estoque_final"
                 ])
 
-                st.success("✅ Histórico apagado com sucesso!")
+                # 🔥 LIMPA PRODUTOS
+                sheet_produtos.clear()
+                sheet_produtos.append_row([
+                    "Produto",
+                    "Trilha",
+                    "Quantidade_inicial",
+                    "Quantidade_total"
+                ])
+
+                st.success("✅ Sistema resetado com sucesso!")
                 st.rerun()
 
             except:
-                st.error("Erro ao limpar histórico")
+                st.error("Erro ao executar reset")
 
 st.divider()
 
@@ -143,9 +151,7 @@ quantidade = st.number_input("Quantidade", min_value=1)
 
 col_a, col_b = st.columns(2)
 
-# ===============================
 # ➕ ENTRADA
-# ===============================
 with col_a:
     if st.button("➕ Adicionar estoque"):
 
@@ -163,17 +169,15 @@ with col_a:
             int(nova_qtd)
         ])
 
-        st.success(f"✅ Entrada realizada! Novo estoque: {nova_qtd}")
+        st.success(f"Entrada realizada! Novo estoque: {nova_qtd}")
         st.rerun()
 
-# ===============================
 # ➖ BAIXA
-# ===============================
 with col_b:
     if st.button("➖ Dar baixa"):
 
         if int(quantidade) > estoque_atual:
-            st.error("❌ Quantidade maior que o estoque")
+            st.error("Quantidade maior que o estoque")
 
         else:
             nova_qtd = estoque_atual - int(quantidade)
@@ -190,7 +194,7 @@ with col_b:
                 int(nova_qtd)
             ])
 
-            st.success(f"✅ Baixa realizada! Novo estoque: {nova_qtd}")
+            st.success(f"Baixa realizada! Novo estoque: {nova_qtd}")
             st.rerun()
 
 # ===============================
