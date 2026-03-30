@@ -37,29 +37,36 @@ if df.empty:
     st.warning("Nenhum produto cadastrado")
     st.stop()
 
+# 🔥 FUNÇÃO SEGURA
+def to_int(valor):
+    try:
+        return int(float(valor))
+    except:
+        return 0
+
 # 🔍 PRODUTO
 produto = st.selectbox("Selecione o produto", df["Produto"])
 
-# 📦 ESTOQUE ATUAL
-estoque_atual = df[df["Produto"] == produto]["Quantidade_inicial"].values[0]
+# 📦 DADOS DO PRODUTO
+linha = df[df["Produto"] == produto].iloc[0]
 
-# 🔥 NOVOS CAMPOS
-quantidade_total = df[df["Produto"] == produto]["Quantidade_total"].values[0]
-percentual_meta = df[df["Produto"] == produto]["Percentual"].values[0]
+estoque_atual = to_int(linha.get("Quantidade_inicial", 0))
+quantidade_total = to_int(linha.get("Quantidade_total", 0))
+percentual_meta = to_int(linha.get("Percentual", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
 # 🔥 CALCULO DE PERFORMANCE
-consumido = int(quantidade_total) - int(estoque_atual)
+consumido = quantidade_total - estoque_atual
 
-if int(quantidade_total) > 0:
-    percentual_consumido = (consumido / int(quantidade_total)) * 100
+if quantidade_total > 0:
+    percentual_consumido = (consumido / quantidade_total) * 100
 else:
     percentual_consumido = 0
 
 percentual_restante = 100 - percentual_consumido
 
-# 🎯 DASH DE CONTROLE
+# 🎯 DASH
 st.subheader("📊 Controle de Produção")
 
 col_a, col_b, col_c = st.columns(3)
@@ -84,7 +91,7 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("➕ Adicionar estoque"):
 
-        nova_qtd = int(estoque_atual) + int(quantidade)
+        nova_qtd = estoque_atual + int(quantidade)
 
         df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
         sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
@@ -106,11 +113,11 @@ with col1:
 with col2:
     if st.button("➖ Dar baixa"):
 
-        if int(quantidade) > int(estoque_atual):
+        if int(quantidade) > estoque_atual:
             st.error("❌ Quantidade maior que o estoque disponível")
 
         else:
-            nova_qtd = int(estoque_atual) - int(quantidade)
+            nova_qtd = estoque_atual - int(quantidade)
 
             df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
@@ -128,7 +135,6 @@ with col2:
             st.success(f"✅ Baixa realizada! Novo estoque: {nova_qtd}")
             st.rerun()
 
-# 📊 VISUALIZAÇÃO
+# 📊 VISUAL
 st.subheader("📊 Estoque Atual")
-
 st.dataframe(df, use_container_width=True)
