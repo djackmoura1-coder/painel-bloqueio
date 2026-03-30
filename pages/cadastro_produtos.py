@@ -8,7 +8,7 @@ if "logado" not in st.session_state or not st.session_state.logado:
     st.warning("🔒 Faça login")
     st.stop()
 
-st.title("📦 Cadastro de Produtos por Trilha")
+st.title("📦 Cadastro de Produtos")
 
 # 🔗 CONEXÃO
 scope = [
@@ -27,11 +27,9 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("produtos")
 
-# 📊 DADOS
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
-# 📝 FORMULÁRIO
 produto = st.text_input("Nome do produto")
 
 trilha = st.selectbox(
@@ -41,30 +39,25 @@ trilha = st.selectbox(
 
 quantidade = st.number_input("Quantidade inicial", min_value=0)
 
-percentual = st.number_input("Percentual (%)", min_value=0, max_value=100)
-
-# 🚀 CADASTRO
 if st.button("Cadastrar produto"):
 
     if produto == "":
-        st.warning("Informe o nome do produto")
+        st.warning("Informe o produto")
 
     elif not df.empty and produto in df["Produto"].values:
-        st.warning("Produto já cadastrado")
+        st.warning("Produto já existe")
 
     else:
 
         sheet.append_row([
             produto,
             trilha,
-            quantidade,   # estoque atual
-            quantidade,   # estoque total
-            percentual
+            quantidade,
+            quantidade  # total fixo
         ])
 
-        st.success("Produto cadastrado com sucesso!")
+        st.success("Produto cadastrado!")
         st.rerun()
 
-# 📊 LISTA
 st.subheader("📊 Produtos cadastrados")
 st.dataframe(df, use_container_width=True)
