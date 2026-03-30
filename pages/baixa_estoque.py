@@ -122,14 +122,20 @@ else:
     consumido = 0
 
 # ===============================
-# 📊 PERCENTUAL (BASE FIXA)
+# 🔥 PERCENTUAIS CORRETOS
 # ===============================
+
+# 🔹 Consumido (base fixa)
 if quantidade_base > 0:
     percentual_consumido = (consumido / quantidade_base) * 100
 else:
     percentual_consumido = 0
 
-percentual_restante = 100 - percentual_consumido
+# 🔹 Restante (dinâmico baseado no estoque)
+if quantidade_total > 0:
+    percentual_restante = (estoque_atual / quantidade_total) * 100
+else:
+    percentual_restante = 0
 
 # ===============================
 # 🎯 DASH
