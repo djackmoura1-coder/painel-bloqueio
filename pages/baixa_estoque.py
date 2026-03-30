@@ -47,7 +47,6 @@ def to_int(valor):
 # 🔍 PRODUTO
 produto = st.selectbox("Selecione o produto", df["Produto"])
 
-# 📦 DADOS DO PRODUTO
 linha = df[df["Produto"] == produto].iloc[0]
 
 estoque_atual = to_int(linha.get("Quantidade_inicial", 0))
@@ -56,9 +55,22 @@ percentual_meta = to_int(linha.get("Percentual", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
-# 🔥 CALCULO DE PERFORMANCE
-consumido = quantidade_total - estoque_atual
+# 🔥 CALCULO REAL (BASEADO NO HISTÓRICO)
+dados_log = sheet_log.get_all_records()
+df_log = pd.DataFrame(dados_log)
 
+if not df_log.empty:
+    df_log = df_log[df_log["Produto"] == produto]
+    df_log = df_log[df_log["Tipo"] == "Baixa"]
+
+    if not df_log.empty:
+        consumido = df_log["Quantidade"].apply(to_int).sum()
+    else:
+        consumido = 0
+else:
+    consumido = 0
+
+# 🔥 PERCENTUAIS
 if quantidade_total > 0:
     percentual_consumido = (consumido / quantidade_total) * 100
 else:
