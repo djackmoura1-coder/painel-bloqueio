@@ -51,11 +51,10 @@ linha = df[df["Produto"] == produto].iloc[0]
 
 estoque_atual = to_int(linha.get("Quantidade_inicial", 0))
 quantidade_total = to_int(linha.get("Quantidade_total", 0))
-percentual_meta = to_int(linha.get("Percentual", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
-# 🔥 HISTÓRICO DE BAIXA (CONSUMO REAL)
+# 🔥 CONSUMO REAL PELO HISTÓRICO
 dados_log = sheet_log.get_all_records()
 df_log = pd.DataFrame(dados_log)
 
@@ -70,43 +69,37 @@ if not df_log.empty:
 else:
     consumido = 0
 
-# 🔥 META EM QUANTIDADE
-meta_qtd = (quantidade_total * percentual_meta) / 100
-
-# 🔥 EXECUÇÃO DA META
-if meta_qtd > 0:
-    percentual_execucao_meta = (consumido / meta_qtd) * 100
+# 🔥 PERCENTUAL REAL
+if quantidade_total > 0:
+    percentual_consumido = (consumido / quantidade_total) * 100
 else:
-    percentual_execucao_meta = 0
+    percentual_consumido = 0
 
-percentual_restante_meta = 100 - percentual_execucao_meta
+percentual_restante = 100 - percentual_consumido
 
 # 🎯 DASH
-st.subheader("📊 Controle de Produção")
+st.subheader("📊 Controle de Consumo")
 
-col_a, col_b, col_c, col_d = st.columns(4)
+col1, col2, col3 = st.columns(3)
 
-with col_a:
+with col1:
     st.metric("📦 Total", quantidade_total)
 
-with col_b:
-    st.metric("🎯 Meta (%)", f"{percentual_meta}%")
+with col2:
+    st.metric("🔥 Consumido", f"{percentual_consumido:.1f}%")
 
-with col_c:
-    st.metric("🔥 Execução da Meta", f"{percentual_execucao_meta:.1f}%")
-
-with col_d:
-    st.metric("⏳ Restante da Meta", f"{percentual_restante_meta:.1f}%")
+with col3:
+    st.metric("⏳ Restante", f"{percentual_restante:.1f}%")
 
 st.divider()
 
 # 🔢 QUANTIDADE
 quantidade = st.number_input("Quantidade", min_value=1)
 
-col1, col2 = st.columns(2)
+col_a, col_b = st.columns(2)
 
 # ➕ ENTRADA
-with col1:
+with col_a:
     if st.button("➕ Adicionar estoque"):
 
         nova_qtd = estoque_atual + int(quantidade)
@@ -123,15 +116,15 @@ with col1:
             int(nova_qtd)
         ])
 
-        st.success(f"✅ Entrada realizada! Novo estoque: {nova_qtd}")
+        st.success(f"Entrada realizada! Novo estoque: {nova_qtd}")
         st.rerun()
 
 # ➖ BAIXA
-with col2:
+with col_b:
     if st.button("➖ Dar baixa"):
 
         if int(quantidade) > estoque_atual:
-            st.error("❌ Quantidade maior que o estoque disponível")
+            st.error("Quantidade maior que o estoque")
 
         else:
             nova_qtd = estoque_atual - int(quantidade)
@@ -148,7 +141,7 @@ with col2:
                 int(nova_qtd)
             ])
 
-            st.success(f"✅ Baixa realizada! Novo estoque: {nova_qtd}")
+            st.success(f"Baixa realizada! Novo estoque: {nova_qtd}")
             st.rerun()
 
 # 📊 VISUAL
