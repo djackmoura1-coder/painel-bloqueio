@@ -5,14 +5,16 @@ from google.oauth2.service_account import Credentials
 
 st.set_page_config(
     page_title="Sistema de Bloqueio",
-    page_icon="assets/logo_petiko.png",  # 🔥 favicon
+    page_icon="assets/logo_petiko.png",
     layout="wide"
 )
 
-# 🔥 LOGO NO TOPO
+# 🔥 LOGO TOPO
 st.image("assets/logo_petiko.png", width=180)
 
-# CONEXÃO
+# ===============================
+# 🔗 CONEXÃO
+# ===============================
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -25,15 +27,19 @@ credentials = Credentials.from_service_account_info(
 
 client = gspread.authorize(credentials)
 
-spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+try:
+    spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+except:
+    st.error("Erro ao conectar com a planilha")
+    st.stop()
 
 sheet_users = spreadsheet.worksheet("usuarios")
-sheet_solic = spreadsheet.worksheet("solicitacoes_usuarios")
 
 df_users = pd.DataFrame(sheet_users.get_all_records())
-df_solic = pd.DataFrame(sheet_solic.get_all_records())
 
-# NORMALIZAÇÃO
+# ===============================
+# 🔄 NORMALIZAÇÃO
+# ===============================
 if not df_users.empty:
     df_users.columns = df_users.columns.str.strip().str.lower()
 
@@ -43,11 +49,15 @@ if not df_users.empty:
 
     df_users = df_users.fillna("").astype(str).apply(lambda x: x.str.strip())
 
-# SESSION
+# ===============================
+# 🔐 SESSION
+# ===============================
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
-# LOGIN
+# ===============================
+# 🔐 LOGIN
+# ===============================
 if not st.session_state.logado:
 
     st.title("🔐 Login do Sistema")
@@ -71,28 +81,26 @@ if not st.session_state.logado:
         user = df_users[df_users["usuario"] == usuario]
 
         if not user.empty:
-
             user = user.iloc[0]
 
             if user["senha"] == senha:
-
                 st.session_state.logado = True
                 st.session_state.usuario = usuario
                 st.session_state.perfil = user["perfil"]
                 st.session_state.departamento = user["departamento"]
                 st.session_state.email = user["email"]
-
                 st.rerun()
-
             else:
                 st.error("Senha incorreta")
-
         else:
             st.error("Usuário não encontrado")
 
+# ===============================
+# 🚀 SISTEMA
+# ===============================
 else:
 
-    # 🔥 LOGO NA SIDEBAR (PROFISSIONAL)
+    # 🔥 SIDEBAR
     st.sidebar.image("assets/logo_petiko.png", width=150)
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
@@ -104,3 +112,65 @@ else:
         st.rerun()
 
     st.title("📦 Sistema Operacional de Bloqueio")
+
+    # ===============================
+    # 🎯 MENU PRINCIPAL
+    # ===============================
+    st.sidebar.divider()
+    st.sidebar.subheader("📂 Menu")
+
+    menu_principal = st.sidebar.radio(
+        "Selecione o módulo:",
+        ["Atendimento & Logística", "Estoque"]
+    )
+
+    # ===============================
+    # 📂 SUBMENU
+    # ===============================
+    if menu_principal == "Atendimento & Logística":
+
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Endereço - Solicitar",
+                "Endereço - Resolver",
+                "Solicitar",
+                "Resolver"
+            ]
+        )
+
+    elif menu_principal == "Estoque":
+
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Cadastro de Produtos",
+                "Baixa de Estoque"
+            ]
+        )
+
+    # ===============================
+    # 🔗 NAVEGAÇÃO
+    # ===============================
+    try:
+
+        if pagina == "Endereço - Solicitar":
+            exec(open("_pages/endereco_solicitar.py").read())
+
+        elif pagina == "Endereço - Resolver":
+            exec(open("_pages/endereco_resolver.py").read())
+
+        elif pagina == "Solicitar":
+            exec(open("_pages/solicitar.py").read())
+
+        elif pagina == "Resolver":
+            exec(open("_pages/resolver.py").read())
+
+        elif pagina == "Cadastro de Produtos":
+            exec(open("_pages/cadastro_produtos.py").read())
+
+        elif pagina == "Baixa de Estoque":
+            exec(open("_pages/baixa_estoque.py").read())
+
+    except Exception as e:
+        st.error(f"Erro ao carregar página: {e}")
