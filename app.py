@@ -111,7 +111,10 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    st.title("📦 Sistema Operacional de Bloqueio")
+    st.markdown(
+    "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Operacional de Bloqueio</h4>",
+    unsafe_allow_html=True
+)
 
     # ===============================
     # 🎯 MENU PRINCIPAL
