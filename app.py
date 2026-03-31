@@ -111,10 +111,11 @@ else:
         st.session_state.clear()
         st.rerun()
 
+    # 🔥 TÍTULO MENOR
     st.markdown(
-    "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
-    unsafe_allow_html=True
-)
+        "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
+        unsafe_allow_html=True
+    )
 
     # ===============================
     # 🎯 MENU PRINCIPAL
@@ -132,15 +133,15 @@ else:
     # ===============================
     if menu_principal == "Atendimento & Logística":
 
-    pagina = st.sidebar.radio(
-        "Páginas:",
-        [
-            "Endereço - Solicitar",
-            "Endereço - Resolver",
-            "Bloqueio - Solicitar",
-            "Bloqueio - Resolver"
-        ]
-    )
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Endereço - Solicitar",
+                "Endereço - Resolver",
+                "Bloqueio - Solicitar",
+                "Bloqueio - Resolver"
+            ]
+        )
 
     elif menu_principal == "Estoque":
 
@@ -163,10 +164,10 @@ else:
         elif pagina == "Endereço - Resolver":
             exec(open("_pages/endereco_resolver.py").read())
 
-        elif pagina == "Solicitar":
+        elif pagina == "Bloqueio - Solicitar":
             exec(open("_pages/solicitar.py").read())
 
-        elif pagina == "Resolver":
+        elif pagina == "Bloqueio - Resolver":
             exec(open("_pages/resolver.py").read())
 
         elif pagina == "Cadastro de Produtos":
