@@ -132,15 +132,15 @@ else:
     # ===============================
     if menu_principal == "Atendimento & Logística":
 
-        pagina = st.sidebar.radio(
-            "Páginas:",
-            [
-                "Endereço - Solicitar",
-                "Endereço - Resolver",
-                "Solicitar",
-                "Resolver"
-            ]
-        )
+    pagina = st.sidebar.radio(
+        "Páginas:",
+        [
+            "Endereço - Solicitar",
+            "Endereço - Resolver",
+            "Bloqueio - Solicitar",
+            "Bloqueio - Resolver"
+        ]
+    )
 
     elif menu_principal == "Estoque":
 
