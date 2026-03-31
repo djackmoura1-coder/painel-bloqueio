@@ -112,7 +112,7 @@ else:
         st.rerun()
 
     st.markdown(
-    "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Operacional de Bloqueio</h4>",
+    "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
     unsafe_allow_html=True
 )
 
