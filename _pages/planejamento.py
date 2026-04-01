@@ -55,11 +55,24 @@ if not df_cap.empty:
 st.subheader("⚙️ Capacidade Operacional")
 
 try:
-    montagem = int(
-        df_cap[df_cap["tipo"] == "montagem_dia"]["quantidade"].values[0]
-    )
-except:
-    st.error("Erro na aba capacidade_operacional (verifique colunas Tipo e Quantidade)")
+    # limpa valores
+    df_cap["tipo"] = df_cap["tipo"].astype(str).str.strip().str.lower()
+    df_cap["quantidade"] = df_cap["quantidade"].astype(str).str.strip()
+
+    df_cap["quantidade"] = df_cap["quantidade"].replace("", "0")
+    df_cap["quantidade"] = df_cap["quantidade"].astype(float)
+
+    # busca flexível
+    linha_montagem = df_cap[df_cap["tipo"].str.contains("montagem")]
+
+    if linha_montagem.empty:
+        st.error("❌ Não encontrou capacidade de montagem na planilha")
+        st.stop()
+
+    montagem = int(linha_montagem["quantidade"].values[0])
+
+except Exception as e:
+    st.error(f"Erro ao ler capacidade_operacional: {e}")
     st.stop()
 
 st.metric("Capacidade de Montagem/Dia", montagem)
@@ -70,13 +83,16 @@ st.metric("Capacidade de Montagem/Dia", montagem)
 st.subheader("📦 Previsão de Pedidos")
 
 if df_prev.empty:
-    st.warning("Sem dados na aba previsao_pedidos")
+    st.warning("⚠️ Sem dados na aba previsao_pedidos")
     st.stop()
 
 try:
+    df_prev["quantidade"] = df_prev["quantidade"].astype(float)
+
     df_group = df_prev.groupby("data")["quantidade"].sum().reset_index()
-except:
-    st.error("Erro na aba previsao_pedidos (verifique colunas Data e Quantidade)")
+
+except Exception as e:
+    st.error(f"Erro na aba previsao_pedidos: {e}")
     st.stop()
 
 # ===============================
