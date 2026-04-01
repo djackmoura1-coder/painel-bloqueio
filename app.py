@@ -149,7 +149,8 @@ else:
             "Páginas:",
             [
                 "Cadastro de Produtos",
-                "Baixa de Estoque"
+                "Baixa de Estoque",
+                "Planejamento Operacional"
             ]
         )
 
@@ -175,6 +176,9 @@ else:
 
         elif pagina == "Baixa de Estoque":
             exec(open("_pages/baixa_estoque.py").read())
+
+        elif pagina == "Planejamento Operacional":
+            exec(open("_pages/planejamento.py").read())
 
     except Exception as e:
         st.error(f"Erro ao carregar página: {e}")
