@@ -43,9 +43,6 @@ except:
 # ===============================
 # 🔥 NORMALIZAÇÃO
 # ===============================
-if not df_prev.empty:
-    df_prev.columns = df_prev.columns.str.strip().str.lower()
-
 if not df_cap.empty:
     df_cap.columns = df_cap.columns.str.strip().str.lower()
 
@@ -55,30 +52,28 @@ if not df_cap.empty:
 st.subheader("⚙️ Capacidade Operacional")
 
 try:
-    # limpa valores
     df_cap["tipo"] = df_cap["tipo"].astype(str).str.strip().str.lower()
     df_cap["quantidade"] = df_cap["quantidade"].astype(str).str.strip()
 
     df_cap["quantidade"] = df_cap["quantidade"].replace("", "0")
     df_cap["quantidade"] = df_cap["quantidade"].astype(float)
 
-    # busca flexível
     linha_montagem = df_cap[df_cap["tipo"].str.contains("montagem")]
 
     if linha_montagem.empty:
-        st.error("❌ Não encontrou capacidade de montagem na planilha")
+        st.error("❌ Não encontrou capacidade de montagem")
         st.stop()
 
     montagem = int(linha_montagem["quantidade"].values[0])
 
 except Exception as e:
-    st.error(f"Erro ao ler capacidade_operacional: {e}")
+    st.error(f"Erro na capacidade_operacional: {e}")
     st.stop()
 
 st.metric("Capacidade de Montagem/Dia", montagem)
 
 # ===============================
-# 📦 PREVISÃO
+# 📦 PREVISÃO (MATRIZ)
 # ===============================
 st.subheader("📦 Previsão de Pedidos")
 
@@ -87,12 +82,27 @@ if df_prev.empty:
     st.stop()
 
 try:
-    df_prev["quantidade"] = df_prev["quantidade"].astype(float)
+    df_prev.columns = df_prev.columns.astype(str)
 
-    df_group = df_prev.groupby("data")["quantidade"].sum().reset_index()
+    coluna_trilha = df_prev.columns[0]
+
+    # 🔥 transforma matriz → formato padrão
+    df_melt = df_prev.melt(
+        id_vars=[coluna_trilha],
+        var_name="data",
+        value_name="quantidade"
+    )
+
+    df_melt["quantidade"] = pd.to_numeric(
+        df_melt["quantidade"],
+        errors="coerce"
+    ).fillna(0)
+
+    # 🔥 agrupa por data
+    df_group = df_melt.groupby("data")["quantidade"].sum().reset_index()
 
 except Exception as e:
-    st.error(f"Erro na aba previsao_pedidos: {e}")
+    st.error(f"Erro ao processar previsão: {e}")
     st.stop()
 
 # ===============================
