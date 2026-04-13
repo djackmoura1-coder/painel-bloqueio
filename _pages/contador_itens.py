@@ -1,26 +1,59 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 
 st.title("📦 Contador de Itens")
 
 st.subheader("📋 Cole a lista de itens")
 
+# ===============================
+# 🔗 CONEXÃO COM PLANILHA
+# ===============================
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=scope
+)
+
+client = gspread.authorize(credentials)
+spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+
+sheet_produtos = spreadsheet.worksheet("produtos")
+df_produtos = pd.DataFrame(sheet_produtos.get_all_records())
+
+# ===============================
+# 🔥 NORMALIZAÇÃO
+# ===============================
+if not df_produtos.empty:
+    df_produtos.columns = df_produtos.columns.str.strip().str.lower()
+    df_produtos["produto"] = df_produtos["produto"].astype(str).str.strip().str.lower()
+
+# ===============================
 # 🔥 CONTROLE DE LIMPEZA
+# ===============================
 if "limpar_lista" not in st.session_state:
     st.session_state.limpar_lista = False
 
-# 🔥 SE PRECISAR LIMPAR
 if st.session_state.limpar_lista:
     st.session_state.lista_itens = ""
     st.session_state.limpar_lista = False
 
-# 🔥 CAMPO DE TEXTO
+# ===============================
+# 📥 CAMPO DE TEXTO
+# ===============================
 texto = st.text_area(
     "Itens (um por linha)",
     key="lista_itens"
 )
 
-# 🔥 BOTÕES
+# ===============================
+# 🔘 BOTÕES
+# ===============================
 col1, col2 = st.columns(2)
 
 with col1:
@@ -30,20 +63,31 @@ with col1:
             st.warning("Cole a lista primeiro")
             st.stop()
 
+        # 🔥 lista digitada
         lista = texto.split("\n")
         lista = [item.strip().lower() for item in lista if item.strip() != ""]
 
-        df = pd.Series(lista).value_counts().reset_index()
-        df.columns = ["produto", "quantidade"]
+        # 🔥 contagem
+        df_lista = pd.Series(lista).value_counts().reset_index()
+        df_lista.columns = ["produto", "quantidade"]
 
-        st.subheader("📊 Resultado")
-        st.dataframe(df, use_container_width=True)
+        # ===============================
+        # 🔗 FILTRAR APENAS PRODUTOS CADASTRADOS
+        # ===============================
+        df_final = df_lista.merge(
+            df_produtos[["produto"]],
+            on="produto",
+            how="inner"  # 🔥 só os que existem
+        )
+
+        st.subheader("📊 Itens Encontrados no Cadastro")
+
+        if df_final.empty:
+            st.warning("Nenhum item da lista está cadastrado")
+        else:
+            st.dataframe(df_final, use_container_width=True)
 
 with col2:
     if st.button("🗑️ Limpar lista"):
-
-        # 🔥 ativa limpeza
         st.session_state.limpar_lista = True
-
-        # 🔥 recarrega tela
         st.rerun()
