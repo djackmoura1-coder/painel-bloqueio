@@ -4,7 +4,6 @@ import gspread
 from google.oauth2.service_account import Credentials
 import re
 import html
-from difflib import get_close_matches
 
 st.title("📦 Contador de Itens")
 
@@ -30,7 +29,7 @@ sheet_produtos = spreadsheet.worksheet("produtos")
 df_produtos = pd.DataFrame(sheet_produtos.get_all_records())
 
 # ===============================
-# 🔥 LIMPEZA DE TEXTO
+# 🔥 LIMPEZA
 # ===============================
 def limpar_texto(texto):
     texto = html.unescape(texto)
@@ -47,8 +46,6 @@ if not df_produtos.empty:
     df_produtos["produto_original"] = df_produtos["produto"]
     df_produtos["produto"] = df_produtos["produto"].astype(str).apply(limpar_texto)
 
-lista_produtos = df_produtos["produto"].tolist()
-
 # ===============================
 # 🔥 CONTROLE DE LIMPEZA
 # ===============================
@@ -62,10 +59,7 @@ if st.session_state.limpar_lista:
 # ===============================
 # 📥 INPUT
 # ===============================
-texto = st.text_area(
-    "Itens (um por linha)",
-    key="lista_itens"
-)
+texto = st.text_area("Itens (um por linha)", key="lista_itens")
 
 # ===============================
 # 🔘 BOTÕES
@@ -83,39 +77,35 @@ with col1:
         lista = [limpar_texto(item) for item in lista if item.strip() != ""]
 
         df_lista = pd.Series(lista).value_counts().reset_index()
-        df_lista.columns = ["produto", "quantidade"]
+        df_lista.columns = ["produto_digitado", "quantidade"]
 
         # ===============================
-        # 🔥 MATCH INTELIGENTE
+        # 🔥 MATCH POR INÍCIO
         # ===============================
-        produtos_encontrados = []
+        resultados = []
 
         for _, row in df_lista.iterrows():
 
-            nome = row["produto"]
+            digitado = row["produto_digitado"]
 
-            match = get_close_matches(nome, lista_produtos, n=1, cutoff=0.7)
+            encontrados = df_produtos[
+                df_produtos["produto"].str.startswith(digitado)
+            ]
 
-            if match:
-                produto_encontrado = match[0]
-
-                nome_original = df_produtos[
-                    df_produtos["produto"] == produto_encontrado
-                ]["produto_original"].values[0]
-
-                produtos_encontrados.append({
-                    "produto_digitado": nome,
-                    "produto_encontrado": nome_original,
+            for _, prod in encontrados.iterrows():
+                resultados.append({
+                    "produto": prod["produto_original"],
                     "quantidade": row["quantidade"]
                 })
 
-        df_final = pd.DataFrame(produtos_encontrados)
+        df_final = pd.DataFrame(resultados)
 
-        st.subheader("📊 Itens Encontrados")
+        st.subheader("📊 Produtos Encontrados")
 
         if df_final.empty:
-            st.warning("Nenhum item encontrado")
+            st.warning("Nenhum produto encontrado")
         else:
+            df_final = df_final.groupby("produto")["quantidade"].sum().reset_index()
             st.dataframe(df_final, use_container_width=True)
 
 with col2:
