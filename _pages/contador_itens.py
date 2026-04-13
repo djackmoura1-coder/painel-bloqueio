@@ -5,25 +5,40 @@ st.title("📦 Contador de Itens")
 
 st.subheader("📋 Cole a lista de itens")
 
-texto = st.text_area("Itens (um por linha)")
+# 🔥 CONTROLE DO TEXTO
+if "lista_itens" not in st.session_state:
+    st.session_state.lista_itens = ""
 
-# 🔥 BOTÃO DE CONTAGEM
-if st.button("🔍 Fazer contagem"):
+# 🔥 CAMPO DE TEXTO
+texto = st.text_area(
+    "Itens (um por linha)",
+    key="lista_itens"
+)
 
-    if texto.strip() == "":
-        st.warning("Cole a lista primeiro")
-        st.stop()
+# 🔥 BOTÕES
+col1, col2 = st.columns(2)
 
-    # 🔥 transforma em lista
-    lista = texto.split("\n")
+with col1:
+    if st.button("🔍 Fazer contagem"):
 
-    # 🔥 limpa dados
-    lista = [item.strip().lower() for item in lista if item.strip() != ""]
+        if texto.strip() == "":
+            st.warning("Cole a lista primeiro")
+            st.stop()
 
-    # 🔥 conta itens
-    df = pd.Series(lista).value_counts().reset_index()
-    df.columns = ["produto", "quantidade"]
+        lista = texto.split("\n")
+        lista = [item.strip().lower() for item in lista if item.strip() != ""]
 
-    st.subheader("📊 Resultado")
+        df = pd.Series(lista).value_counts().reset_index()
+        df.columns = ["produto", "quantidade"]
 
-    st.dataframe(df, use_container_width=True)
+        st.subheader("📊 Resultado")
+        st.dataframe(df, use_container_width=True)
+
+with col2:
+    if st.button("🗑️ Limpar lista"):
+
+        # 🔥 limpa tudo
+        st.session_state.lista_itens = ""
+
+        # 🔥 atualiza tela
+        st.rerun()
