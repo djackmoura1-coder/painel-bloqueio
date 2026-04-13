@@ -34,7 +34,6 @@ except:
     st.stop()
 
 sheet_users = spreadsheet.worksheet("usuarios")
-
 df_users = pd.DataFrame(sheet_users.get_all_records())
 
 # ===============================
@@ -111,7 +110,7 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    # 🔥 TÍTULO MENOR
+    # 🔥 TÍTULO
     st.markdown(
         "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
         unsafe_allow_html=True
@@ -150,7 +149,8 @@ else:
             [
                 "Cadastro de Produtos",
                 "Baixa de Estoque",
-                "Planejamento Operacional"
+                "Planejamento Operacional",
+                "Contador de Itens"  # 🔥 NOVO
             ]
         )
 
@@ -179,6 +179,9 @@ else:
 
         elif pagina == "Planejamento Operacional":
             exec(open("_pages/planejamento.py").read())
+
+        elif pagina == "Contador de Itens":  # 🔥 NOVO
+            exec(open("_pages/contador_itens.py").read())
 
     except Exception as e:
         st.error(f"Erro ao carregar página: {e}")
