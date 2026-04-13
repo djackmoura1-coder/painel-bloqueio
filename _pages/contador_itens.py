@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
-import re
-import html
+from datetime import datetime
 
-st.title("📦 Contador de Itens")
+st.title("📦 Contador de Itens (SKU)")
 
-st.subheader("📋 Cole a lista de itens")
+st.subheader("📋 Cole os SKUs (um por linha)")
 
 # ===============================
 # 🔗 CONEXÃO
@@ -26,28 +25,22 @@ client = gspread.authorize(credentials)
 spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
 
 sheet_produtos = spreadsheet.worksheet("produtos")
+sheet_log = spreadsheet.worksheet("movimentacoes")
+
+# ===============================
+# 📊 DADOS
+# ===============================
 df_produtos = pd.DataFrame(sheet_produtos.get_all_records())
 
-# ===============================
-# 🔥 LIMPEZA
-# ===============================
-def limpar_texto(texto):
-    texto = html.unescape(texto)
-    texto = texto.lower().strip()
-    texto = re.sub(r'\s+', ' ', texto)
-    texto = re.sub(r'[^\w\s]', '', texto)
-    return texto
+if df_produtos.empty:
+    st.warning("Nenhum produto cadastrado")
+    st.stop()
+
+# 🔥 NORMALIZA
+df_produtos.columns = df_produtos.columns.str.strip().str.lower()
 
 # ===============================
-# 🔥 NORMALIZA PRODUTOS
-# ===============================
-if not df_produtos.empty:
-    df_produtos.columns = df_produtos.columns.str.strip().str.lower()
-    df_produtos["produto_original"] = df_produtos["produto"]
-    df_produtos["produto"] = df_produtos["produto"].astype(str).apply(limpar_texto)
-
-# ===============================
-# 🔥 CONTROLE DE LIMPEZA
+# 🔥 CONTROLE LIMPEZA
 # ===============================
 if "limpar_lista" not in st.session_state:
     st.session_state.limpar_lista = False
@@ -59,95 +52,94 @@ if st.session_state.limpar_lista:
 # ===============================
 # 📥 INPUT
 # ===============================
-texto = st.text_area("Itens (um por linha)", key="lista_itens")
+texto = st.text_area("SKUs", key="lista_itens")
 
-# ===============================
-# 🔘 BOTÕES
-# ===============================
 col1, col2 = st.columns(2)
 
+# ===============================
+# 🔍 CONTAGEM
+# ===============================
 with col1:
     if st.button("🔍 Fazer contagem"):
 
         if texto.strip() == "":
-            st.warning("Cole a lista primeiro")
+            st.warning("Cole os SKUs")
             st.stop()
 
         lista = texto.split("\n")
-        lista = [limpar_texto(item) for item in lista if item.strip() != ""]
+        lista = [item.strip() for item in lista if item.strip() != ""]
 
         df_lista = pd.Series(lista).value_counts().reset_index()
-        df_lista.columns = ["produto_digitado", "quantidade"]
+        df_lista.columns = ["sku", "quantidade"]
 
-        resultados = []
+        # 🔗 CRUZAR COM PRODUTOS
+        df_final = df_lista.merge(
+            df_produtos,
+            on="sku",
+            how="inner"
+        )
 
-        for _, row in df_lista.iterrows():
+        if df_final.empty:
+            st.warning("Nenhum SKU encontrado")
+        else:
+            st.session_state.resultado = df_final
 
-            digitado = row["produto_digitado"]
-
-            encontrados = df_produtos[
-                df_produtos["produto"].str.startswith(digitado)
-            ]
-
-            for _, prod in encontrados.iterrows():
-                resultados.append({
-                    "produto": prod["produto_original"],
-                    "produto_limpo": prod["produto"],
-                    "quantidade": row["quantidade"]
-                })
-
-        df_final = pd.DataFrame(resultados)
-
-        if not df_final.empty:
-            df_final = df_final.groupby(["produto", "produto_limpo"])["quantidade"].sum().reset_index()
-
-        st.session_state.resultado_contagem = df_final
-
+# ===============================
+# 🗑️ LIMPAR
+# ===============================
 with col2:
     if st.button("🗑️ Limpar lista"):
         st.session_state.limpar_lista = True
         st.rerun()
 
 # ===============================
-# 📊 EXIBIR RESULTADO
+# 📊 RESULTADO
 # ===============================
-if "resultado_contagem" in st.session_state:
+if "resultado" in st.session_state:
 
-    df_final = st.session_state.resultado_contagem
+    df_final = st.session_state.resultado
 
-    st.subheader("📊 Produtos Encontrados")
+    st.subheader("📊 Itens encontrados")
 
-    if df_final.empty:
-        st.warning("Nenhum produto encontrado")
-    else:
-        st.dataframe(df_final[["produto", "quantidade"]], use_container_width=True)
+    st.dataframe(
+        df_final[["sku", "produto", "quantidade"]],
+        use_container_width=True
+    )
 
-        # ===============================
-        # 🔥 BOTÃO DE BAIXA
-        # ===============================
-        if st.button("📉 Dar baixa no estoque"):
+    # ===============================
+    # 📉 BAIXA
+    # ===============================
+    if st.button("📉 Dar baixa no estoque"):
 
-            for _, row in df_final.iterrows():
+        for _, row in df_final.iterrows():
 
-                produto_limpo = row["produto_limpo"]
-                qtd_baixa = int(row["quantidade"])
+            sku = row["sku"]
+            qtd_baixa = int(row["quantidade"])
 
-                idx = df_produtos[df_produtos["produto"] == produto_limpo].index
+            idx = df_produtos[df_produtos["sku"] == sku].index
 
-                if not idx.empty:
-                    idx = idx[0]
+            if not idx.empty:
+                idx = idx[0]
 
-                    estoque_atual = int(df_produtos.loc[idx, "quantidade_inicial"])
-                    novo_estoque = estoque_atual - qtd_baixa
+                estoque_atual = int(df_produtos.loc[idx, "quantidade_inicial"])
+                novo_estoque = estoque_atual - qtd_baixa
 
-                    df_produtos.loc[idx, "quantidade_inicial"] = novo_estoque
+                df_produtos.loc[idx, "quantidade_inicial"] = novo_estoque
 
-            # 🔥 ATUALIZA PLANILHA
-            sheet_produtos.update([df_produtos.columns.tolist()] + df_produtos.values.tolist())
+                # 🔥 LOG
+                sheet_log.append_row([
+                    str(datetime.now()),
+                    st.session_state.get("usuario"),
+                    sku,
+                    "Baixa",
+                    qtd_baixa,
+                    novo_estoque
+                ])
 
-            st.success("✅ Baixa realizada com sucesso!")
+        # 🔥 ATUALIZA PLANILHA
+        sheet_produtos.update([df_produtos.columns.tolist()] + df_produtos.values.tolist())
 
-            # limpa resultado
-            del st.session_state.resultado_contagem
+        st.success("✅ Baixa realizada com sucesso!")
 
-            st.rerun()
+        del st.session_state.resultado
+        st.rerun()
