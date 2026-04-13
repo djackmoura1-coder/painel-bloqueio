@@ -79,9 +79,6 @@ with col1:
         df_lista = pd.Series(lista).value_counts().reset_index()
         df_lista.columns = ["produto_digitado", "quantidade"]
 
-        # ===============================
-        # 🔥 MATCH POR INÍCIO
-        # ===============================
         resultados = []
 
         for _, row in df_lista.iterrows():
@@ -95,20 +92,62 @@ with col1:
             for _, prod in encontrados.iterrows():
                 resultados.append({
                     "produto": prod["produto_original"],
+                    "produto_limpo": prod["produto"],
                     "quantidade": row["quantidade"]
                 })
 
         df_final = pd.DataFrame(resultados)
 
-        st.subheader("📊 Produtos Encontrados")
+        if not df_final.empty:
+            df_final = df_final.groupby(["produto", "produto_limpo"])["quantidade"].sum().reset_index()
 
-        if df_final.empty:
-            st.warning("Nenhum produto encontrado")
-        else:
-            df_final = df_final.groupby("produto")["quantidade"].sum().reset_index()
-            st.dataframe(df_final, use_container_width=True)
+        st.session_state.resultado_contagem = df_final
 
 with col2:
     if st.button("🗑️ Limpar lista"):
         st.session_state.limpar_lista = True
         st.rerun()
+
+# ===============================
+# 📊 EXIBIR RESULTADO
+# ===============================
+if "resultado_contagem" in st.session_state:
+
+    df_final = st.session_state.resultado_contagem
+
+    st.subheader("📊 Produtos Encontrados")
+
+    if df_final.empty:
+        st.warning("Nenhum produto encontrado")
+    else:
+        st.dataframe(df_final[["produto", "quantidade"]], use_container_width=True)
+
+        # ===============================
+        # 🔥 BOTÃO DE BAIXA
+        # ===============================
+        if st.button("📉 Dar baixa no estoque"):
+
+            for _, row in df_final.iterrows():
+
+                produto_limpo = row["produto_limpo"]
+                qtd_baixa = int(row["quantidade"])
+
+                idx = df_produtos[df_produtos["produto"] == produto_limpo].index
+
+                if not idx.empty:
+                    idx = idx[0]
+
+                    estoque_atual = int(df_produtos.loc[idx, "quantidade_inicial"])
+                    novo_estoque = estoque_atual - qtd_baixa
+
+                    df_produtos.loc[idx, "quantidade_inicial"] = novo_estoque
+
+            # 🔥 ATUALIZA PLANILHA
+            sheet_produtos.update([df_produtos.columns.tolist()] + df_produtos.values.tolist())
+
+            st.success("✅ Baixa realizada com sucesso!")
+
+            # limpa resultado
+            del st.session_state.resultado_contagem
+
+            st.rerun()
