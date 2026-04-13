@@ -4,13 +4,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 import re
 import html
+from difflib import get_close_matches
 
 st.title("📦 Contador de Itens")
 
 st.subheader("📋 Cole a lista de itens")
 
 # ===============================
-# 🔗 CONEXÃO COM PLANILHA
+# 🔗 CONEXÃO
 # ===============================
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -29,14 +30,13 @@ sheet_produtos = spreadsheet.worksheet("produtos")
 df_produtos = pd.DataFrame(sheet_produtos.get_all_records())
 
 # ===============================
-# 🔥 FUNÇÃO DE LIMPEZA
+# 🔥 LIMPEZA DE TEXTO
 # ===============================
 def limpar_texto(texto):
-    texto = html.unescape(texto)  # &amp; → &
-    texto = texto.lower()
-    texto = texto.strip()
-    texto = re.sub(r'\s+', ' ', texto)  # remove espaços duplicados
-    texto = re.sub(r'[^\w\s]', '', texto)  # remove símbolos
+    texto = html.unescape(texto)
+    texto = texto.lower().strip()
+    texto = re.sub(r'\s+', ' ', texto)
+    texto = re.sub(r'[^\w\s]', '', texto)
     return texto
 
 # ===============================
@@ -44,7 +44,10 @@ def limpar_texto(texto):
 # ===============================
 if not df_produtos.empty:
     df_produtos.columns = df_produtos.columns.str.strip().str.lower()
+    df_produtos["produto_original"] = df_produtos["produto"]
     df_produtos["produto"] = df_produtos["produto"].astype(str).apply(limpar_texto)
+
+lista_produtos = df_produtos["produto"].tolist()
 
 # ===============================
 # 🔥 CONTROLE DE LIMPEZA
@@ -57,7 +60,7 @@ if st.session_state.limpar_lista:
     st.session_state.limpar_lista = False
 
 # ===============================
-# 📥 CAMPO DE TEXTO
+# 📥 INPUT
 # ===============================
 texto = st.text_area(
     "Itens (um por linha)",
@@ -76,27 +79,42 @@ with col1:
             st.warning("Cole a lista primeiro")
             st.stop()
 
-        # 🔥 lista digitada
         lista = texto.split("\n")
         lista = [limpar_texto(item) for item in lista if item.strip() != ""]
 
-        # 🔥 contagem
         df_lista = pd.Series(lista).value_counts().reset_index()
         df_lista.columns = ["produto", "quantidade"]
 
         # ===============================
-        # 🔗 FILTRAR APENAS PRODUTOS CADASTRADOS
+        # 🔥 MATCH INTELIGENTE
         # ===============================
-        df_final = df_lista.merge(
-            df_produtos[["produto"]],
-            on="produto",
-            how="inner"
-        )
+        produtos_encontrados = []
 
-        st.subheader("📊 Itens Encontrados no Cadastro")
+        for _, row in df_lista.iterrows():
+
+            nome = row["produto"]
+
+            match = get_close_matches(nome, lista_produtos, n=1, cutoff=0.7)
+
+            if match:
+                produto_encontrado = match[0]
+
+                nome_original = df_produtos[
+                    df_produtos["produto"] == produto_encontrado
+                ]["produto_original"].values[0]
+
+                produtos_encontrados.append({
+                    "produto_digitado": nome,
+                    "produto_encontrado": nome_original,
+                    "quantidade": row["quantidade"]
+                })
+
+        df_final = pd.DataFrame(produtos_encontrados)
+
+        st.subheader("📊 Itens Encontrados")
 
         if df_final.empty:
-            st.warning("Nenhum item da lista está cadastrado")
+            st.warning("Nenhum item encontrado")
         else:
             st.dataframe(df_final, use_container_width=True)
 
