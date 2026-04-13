@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+import re
+import html
 
 st.title("📦 Contador de Itens")
 
@@ -27,11 +29,22 @@ sheet_produtos = spreadsheet.worksheet("produtos")
 df_produtos = pd.DataFrame(sheet_produtos.get_all_records())
 
 # ===============================
-# 🔥 NORMALIZAÇÃO
+# 🔥 FUNÇÃO DE LIMPEZA
+# ===============================
+def limpar_texto(texto):
+    texto = html.unescape(texto)  # &amp; → &
+    texto = texto.lower()
+    texto = texto.strip()
+    texto = re.sub(r'\s+', ' ', texto)  # remove espaços duplicados
+    texto = re.sub(r'[^\w\s]', '', texto)  # remove símbolos
+    return texto
+
+# ===============================
+# 🔥 NORMALIZA PRODUTOS
 # ===============================
 if not df_produtos.empty:
     df_produtos.columns = df_produtos.columns.str.strip().str.lower()
-    df_produtos["produto"] = df_produtos["produto"].astype(str).str.strip().str.lower()
+    df_produtos["produto"] = df_produtos["produto"].astype(str).apply(limpar_texto)
 
 # ===============================
 # 🔥 CONTROLE DE LIMPEZA
@@ -65,7 +78,7 @@ with col1:
 
         # 🔥 lista digitada
         lista = texto.split("\n")
-        lista = [item.strip().lower() for item in lista if item.strip() != ""]
+        lista = [limpar_texto(item) for item in lista if item.strip() != ""]
 
         # 🔥 contagem
         df_lista = pd.Series(lista).value_counts().reset_index()
@@ -77,7 +90,7 @@ with col1:
         df_final = df_lista.merge(
             df_produtos[["produto"]],
             on="produto",
-            how="inner"  # 🔥 só os que existem
+            how="inner"
         )
 
         st.subheader("📊 Itens Encontrados no Cadastro")
