@@ -14,15 +14,14 @@ st.title("📦 Movimentação de Estoque")
 # 🔐 CONTROLE DE PERMISSÃO
 departamento = str(st.session_state.get("departamento", "")).lower()
 
-if departamento in ["atendimento", "faturamento"]:
-    pode_editar = False
-else:
-    pode_editar = True
+pode_editar = departamento not in ["atendimento", "faturamento"]
 
 if not pode_editar:
     st.warning("🔒 Você possui acesso apenas de visualização")
 
+# ===============================
 # 🔗 CONEXÃO
+# ===============================
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -55,11 +54,11 @@ with col_reset2:
 
         if confirmar:
             sheet_log.clear()
-            sheet_log.append_row(["Data","Usuario","Produto","Tipo","Quantidade","Estoque_final"])
+            sheet_log.append_row(["data","usuario","produto","tipo","quantidade","estoque_final"])
 
             sheet_produtos.clear()
             sheet_produtos.append_row([
-                "Produto","Trilha","Quantidade_inicial","Quantidade_total","Quantidade_base"
+                "produto","trilha","quantidade_inicial","quantidade_total","quantidade_base"
             ])
 
             st.success("Sistema resetado!")
@@ -77,19 +76,25 @@ if df.empty:
     st.warning("Nenhum produto cadastrado.")
     st.stop()
 
+# 🔥 NORMALIZA COLUNAS
+df.columns = df.columns.str.strip().str.lower()
+
 def to_int(valor):
     try:
         return int(float(valor))
     except:
         return 0
 
-produto = st.selectbox("Selecione o produto", df["Produto"])
+# ===============================
+# 🔍 PRODUTO
+# ===============================
+produto = st.selectbox("Selecione o produto", df["produto"])
 
-linha = df[df["Produto"] == produto].iloc[0]
+linha = df[df["produto"] == produto].iloc[0]
 
-estoque_atual = to_int(linha.get("Quantidade_inicial", 0))
-quantidade_total = to_int(linha.get("Quantidade_total", 0))
-quantidade_base = to_int(linha.get("Quantidade_base", 0))
+estoque_atual = to_int(linha.get("quantidade_inicial", 0))
+quantidade_total = to_int(linha.get("quantidade_total", 0))
+quantidade_base = to_int(linha.get("quantidade_base", 0))
 
 st.info(f"📦 Estoque atual: {estoque_atual}")
 
@@ -100,8 +105,14 @@ dados_log = sheet_log.get_all_records()
 df_log = pd.DataFrame(dados_log)
 
 if not df_log.empty:
-    df_log = df_log[(df_log["Produto"] == produto) & (df_log["Tipo"] == "Baixa")]
-    consumido = df_log["Quantidade"].apply(to_int).sum() if not df_log.empty else 0
+    df_log.columns = df_log.columns.str.strip().str.lower()
+
+    df_log = df_log[
+        (df_log["produto"] == produto) &
+        (df_log["tipo"] == "Baixa")
+    ]
+
+    consumido = df_log["quantidade"].apply(to_int).sum() if not df_log.empty else 0
 else:
     consumido = 0
 
@@ -131,15 +142,17 @@ quantidade = st.number_input("Quantidade", min_value=1, disabled=not pode_editar
 
 col_a, col_b = st.columns(2)
 
+# ===============================
 # ➕ ENTRADA
+# ===============================
 with col_a:
     if st.button("➕ Entrada", disabled=not pode_editar):
 
         nova_qtd = estoque_atual + quantidade
         novo_total = quantidade_total + quantidade
 
-        df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
-        df.loc[df["Produto"] == produto, "Quantidade_total"] = novo_total
+        df.loc[df["produto"] == produto, "quantidade_inicial"] = nova_qtd
+        df.loc[df["produto"] == produto, "quantidade_total"] = novo_total
 
         sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
@@ -154,7 +167,9 @@ with col_a:
 
         st.rerun()
 
+# ===============================
 # ➖ BAIXA
+# ===============================
 with col_b:
     if st.button("➖ Baixa", disabled=not pode_editar):
 
@@ -163,7 +178,8 @@ with col_b:
         else:
             nova_qtd = estoque_atual - quantidade
 
-            df.loc[df["Produto"] == produto, "Quantidade_inicial"] = nova_qtd
+            df.loc[df["produto"] == produto, "quantidade_inicial"] = nova_qtd
+
             sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
 
             sheet_log.append_row([
@@ -175,7 +191,5 @@ with col_b:
                 nova_qtd
             ])
 
+            st.success("Baixa realizada com sucesso!")
             st.rerun()
-
-st.subheader("📊 Estoque")
-st.dataframe(df)
