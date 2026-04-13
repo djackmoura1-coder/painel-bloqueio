@@ -13,7 +13,6 @@ st.title("📦 Movimentação de Estoque")
 
 # 🔐 CONTROLE DE PERMISSÃO
 departamento = str(st.session_state.get("departamento", "")).lower()
-
 pode_editar = departamento not in ["atendimento", "faturamento"]
 
 if not pode_editar:
@@ -86,6 +85,14 @@ def to_int(valor):
         return 0
 
 # ===============================
+# 🚨 ALERTA GERAL
+# ===============================
+itens_criticos = df[df["quantidade_inicial"].apply(to_int) <= 100]
+
+if not itens_criticos.empty:
+    st.error(f"🚨 {len(itens_criticos)} itens com estoque crítico (≤ 100 unidades)")
+
+# ===============================
 # 🔍 PRODUTO
 # ===============================
 produto = st.selectbox("Selecione o produto", df["produto"])
@@ -96,7 +103,11 @@ estoque_atual = to_int(linha.get("quantidade_inicial", 0))
 quantidade_total = to_int(linha.get("quantidade_total", 0))
 quantidade_base = to_int(linha.get("quantidade_base", 0))
 
-st.info(f"📦 Estoque atual: {estoque_atual}")
+# 🚨 ALERTA INDIVIDUAL
+if estoque_atual <= 100:
+    st.error(f"🚨 Estoque baixo: {estoque_atual} unidades")
+else:
+    st.info(f"📦 Estoque atual: {estoque_atual}")
 
 # ===============================
 # 📊 CONSUMO
@@ -193,3 +204,18 @@ with col_b:
 
             st.success("Baixa realizada com sucesso!")
             st.rerun()
+
+# ===============================
+# 📊 TABELA COM DESTAQUE
+# ===============================
+st.subheader("📊 Visão Geral do Estoque")
+
+def destacar_estoque(row):
+    if to_int(row["quantidade_inicial"]) <= 100:
+        return ["background-color: #ffcccc"] * len(row)
+    return [""] * len(row)
+
+st.dataframe(
+    df.style.apply(destacar_estoque, axis=1),
+    use_container_width=True
+)
