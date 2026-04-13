@@ -5,9 +5,14 @@ st.title("📦 Contador de Itens")
 
 st.subheader("📋 Cole a lista de itens")
 
-# 🔥 CONTROLE DO TEXTO
-if "lista_itens" not in st.session_state:
+# 🔥 CONTROLE DE LIMPEZA
+if "limpar_lista" not in st.session_state:
+    st.session_state.limpar_lista = False
+
+# 🔥 SE PRECISAR LIMPAR
+if st.session_state.limpar_lista:
     st.session_state.lista_itens = ""
+    st.session_state.limpar_lista = False
 
 # 🔥 CAMPO DE TEXTO
 texto = st.text_area(
@@ -37,8 +42,8 @@ with col1:
 with col2:
     if st.button("🗑️ Limpar lista"):
 
-        # 🔥 limpa tudo
-        st.session_state.lista_itens = ""
+        # 🔥 ativa limpeza
+        st.session_state.limpar_lista = True
 
-        # 🔥 atualiza tela
+        # 🔥 recarrega tela
         st.rerun()
