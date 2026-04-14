@@ -89,7 +89,7 @@ def to_int(valor):
 itens_criticos = df[df["quantidade_inicial"].apply(to_int) <= 200]
 
 if not itens_criticos.empty:
-    st.error(f"🚨 {len(itens_criticos)} itens com estoque crítico (≤ 200 unidades)")
+    st.warning(f"⚠️ {len(itens_criticos)} itens com estoque baixo (≤ 200 unidades)")
 
 # ===============================
 # 🔍 PRODUTO
@@ -102,9 +102,9 @@ estoque_atual = to_int(linha.get("quantidade_inicial", 0))
 quantidade_total = to_int(linha.get("quantidade_total", 0))
 quantidade_base = to_int(linha.get("quantidade_base", 0))
 
-# 🚨 ALERTA INDIVIDUAL (200)
+# 🚨 ALERTA INDIVIDUAL
 if estoque_atual <= 200:
-    st.error(f"🚨 Estoque baixo: {estoque_atual} unidades")
+    st.warning(f"⚠️ Estoque baixo: {estoque_atual} unidades")
 else:
     st.info(f"📦 Estoque atual: {estoque_atual}")
 
@@ -205,13 +205,13 @@ with col_b:
             st.rerun()
 
 # ===============================
-# 📊 TABELA COM DESTAQUE
+# 📊 TABELA COM DESTAQUE AMARELO
 # ===============================
 st.subheader("📊 Visão Geral do Estoque")
 
 def destacar_estoque(row):
     if to_int(row["quantidade_inicial"]) <= 200:
-        return ["background-color: #ffcccc"] * len(row)
+        return ["background-color: yellow; color: black"] * len(row)
     return [""] * len(row)
 
 st.dataframe(
