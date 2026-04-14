@@ -64,7 +64,7 @@ df.columns = (
 df["status"] = df["status"].astype(str).str.strip().str.lower()
 
 # ===============================
-# 📊 DASH STATUS (NOVO)
+# 📊 DASH STATUS
 # ===============================
 pendentes = len(df[df["status"] == "pendente"])
 tratativa = len(df[df["status"] == "em tratativa"])
@@ -183,7 +183,7 @@ else:
     st.info("Sem solicitações pendentes")
 
 # ===============================
-# 🎨 STATUS VISUAL (NOVO)
+# 🎨 STATUS VISUAL
 # ===============================
 def status_colorido(status):
     if status == "pendente":
@@ -197,12 +197,17 @@ def status_colorido(status):
 
 df["status_visual"] = df["status"].apply(status_colorido)
 
+# 🔥 REMOVE COLUNAS DUPLICADAS
+df = df.loc[:, ~df.columns.duplicated()]
+
 # ===============================
 # 📊 HISTÓRICO
 # ===============================
 st.subheader("📊 Histórico")
 
+colunas = [col for col in df.columns if col != "status_visual"]
+
 st.dataframe(
-    df[["status_visual"] + list(df.columns)],
+    df[["status_visual"] + colunas],
     use_container_width=True
 )
