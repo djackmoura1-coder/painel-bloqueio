@@ -15,7 +15,9 @@ st.title("🔧 Resolver Atualização de Endereço")
 # 🔒 CONTROLE DE PERMISSÃO
 bloqueado_resolucao = st.session_state.get("departamento", "").lower() == "atendimento"
 
+# ===============================
 # 🔗 CONEXÃO
+# ===============================
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -32,7 +34,9 @@ sheet = client.open_by_key(
     "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
 ).worksheet("enderecos")
 
-# 🔥 LEITURA SEGURA
+# ===============================
+# 📊 DADOS
+# ===============================
 dados = sheet.get_all_values()
 
 if len(dados) < 2:
@@ -41,7 +45,9 @@ if len(dados) < 2:
 
 df = pd.DataFrame(dados[1:], columns=dados[0])
 
+# ===============================
 # 🔥 NORMALIZAÇÃO
+# ===============================
 df.columns = (
     pd.Series(df.columns)
     .str.strip()
@@ -55,7 +61,28 @@ df.columns = (
     .str.replace("ú", "u")
 )
 
+df["status"] = df["status"].astype(str).str.strip().str.lower()
+
+# ===============================
+# 📊 DASH STATUS (NOVO)
+# ===============================
+pendentes = len(df[df["status"] == "pendente"])
+tratativa = len(df[df["status"] == "em tratativa"])
+resolvidos = len(df[df["status"] == "finalizado"])
+
+st.subheader("📊 Status dos Pedidos")
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("🟡 Pendentes", pendentes)
+col2.metric("🟠 Em tratativa", tratativa)
+col3.metric("🟢 Resolvidos", resolvidos)
+
+st.divider()
+
+# ===============================
 # 🔎 BUSCA
+# ===============================
 st.subheader("🔎 Buscar rastreio")
 
 busca = st.text_input("Digite o código de rastreio")
@@ -70,16 +97,18 @@ if busca:
 
 st.divider()
 
+# ===============================
 # 🔧 RESOLVER
+# ===============================
 st.subheader("Resolver ocorrência")
 
-pendentes = df[df["status"] == "Pendente"]
+pendentes_df = df[df["status"] == "pendente"]
 
-if not pendentes.empty:
+if not pendentes_df.empty:
 
     rastreio = st.selectbox(
         "Selecionar rastreio",
-        pendentes["rastreio"]
+        pendentes_df["rastreio"]
     )
 
     acao = st.radio(
@@ -87,7 +116,6 @@ if not pendentes.empty:
         ["Atualizado", "Não atualizado"]
     )
 
-    # 🔒 BLOQUEIO VISUAL
     if bloqueado_resolucao:
         st.warning("🚫 Você não tem permissão para finalizar ocorrências.")
 
@@ -95,16 +123,13 @@ if not pendentes.empty:
 
     if botao and not bloqueado_resolucao:
 
-        df.loc[df["rastreio"] == rastreio, "status"] = "Finalizado"
+        df.loc[df["rastreio"] == rastreio, "status"] = "finalizado"
         df.loc[df["rastreio"] == rastreio, "resultado"] = acao
 
-        # 🔥 PEGA EMAIL
         email_cliente = df.loc[df["rastreio"] == rastreio, "email"].values[0]
 
-        # 🔄 ATUALIZA PLANILHA
         sheet.update([df.columns.tolist()] + df.values.tolist())
 
-        # 📧 MENSAGEM DINÂMICA
         if acao == "Não atualizado":
             mensagem_extra = """
 
@@ -113,7 +138,6 @@ Não foi atualizado. Por favor, solicite ao cliente que recuse o pedido ou, se p
         else:
             mensagem_extra = ""
 
-        # 📧 ENVIO DE EMAIL
         if email_cliente:
 
             mensagem = f"""
@@ -158,7 +182,27 @@ Sistema de Atualização de Endereço
 else:
     st.info("Sem solicitações pendentes")
 
+# ===============================
+# 🎨 STATUS VISUAL (NOVO)
+# ===============================
+def status_colorido(status):
+    if status == "pendente":
+        return "🟡"
+    elif status == "em tratativa":
+        return "🟠"
+    elif status == "finalizado":
+        return "🟢"
+    else:
+        return "⚪"
+
+df["status_visual"] = df["status"].apply(status_colorido)
+
+# ===============================
 # 📊 HISTÓRICO
+# ===============================
 st.subheader("📊 Histórico")
 
-st.dataframe(df, use_container_width=True)
+st.dataframe(
+    df[["status_visual"] + list(df.columns)],
+    use_container_width=True
+)
