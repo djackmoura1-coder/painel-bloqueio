@@ -184,21 +184,23 @@ else:
     st.info("Sem solicitações pendentes")
 
 # ===============================
-# 🎨 RESULTADO VISUAL (BOLINHA)
+# 🎨 RESULTADO FORMATADO (BOLINHA + TEXTO)
 # ===============================
-def resultado_colorido(resultado):
-    if resultado == "não resolvido":
-        return "🔴"
-    elif resultado == "resolvido":
-        return "🟢"
-    elif resultado == "pendente":
-        return "🟡"
-    elif resultado == "em tratativa":
-        return "🟠"
-    else:
-        return "⚪"
+def resultado_formatado(resultado):
+    resultado = str(resultado).lower().strip()
 
-df["resultado_visual"] = df["resultado"].apply(resultado_colorido)
+    if resultado == "não resolvido":
+        return "🔴 Não resolvido"
+    elif resultado == "resolvido":
+        return "🟢 Resolvido"
+    elif resultado == "pendente":
+        return "🟡 Pendente"
+    elif resultado == "em tratativa":
+        return "🟠 Em tratativa"
+    else:
+        return resultado
+
+df["resultado"] = df["resultado"].apply(resultado_formatado)
 
 # 🔥 REMOVE COLUNAS DUPLICADAS
 df = df.loc[:, ~df.columns.duplicated()]
@@ -208,9 +210,7 @@ df = df.loc[:, ~df.columns.duplicated()]
 # ===============================
 st.subheader("📊 Histórico")
 
-colunas = [col for col in df.columns if col != "resultado_visual"]
-
 st.dataframe(
-    df[["resultado_visual"] + colunas],
+    df,
     use_container_width=True
 )
