@@ -62,7 +62,10 @@ df.columns = (
 )
 
 df["status"] = df["status"].astype(str).str.strip().str.lower()
-df["resultado"] = df["resultado"].fillna("pendente").astype(str).str.strip().str.lower()
+
+# 🔥 CORREÇÃO CRÍTICA AQUI
+df["resultado"] = df["resultado"].astype(str).str.strip().str.lower()
+df["resultado"] = df["resultado"].replace(["", "nan", "none"], "pendente")
 
 # ===============================
 # 📊 DASH STATUS (TOPO)
@@ -184,11 +187,9 @@ else:
     st.info("Sem solicitações pendentes")
 
 # ===============================
-# 🎨 RESULTADO FORMATADO (BOLINHA NO FINAL)
+# 🎨 RESULTADO FORMATADO
 # ===============================
 def resultado_formatado(resultado):
-    resultado = str(resultado).lower().strip()
-
     if resultado == "não resolvido":
         return "Não resolvido 🔴"
     elif resultado == "resolvido":
@@ -201,9 +202,6 @@ def resultado_formatado(resultado):
         return resultado
 
 df["resultado"] = df["resultado"].apply(resultado_formatado)
-
-# 🔥 REMOVE COLUNAS DUPLICADAS
-df = df.loc[:, ~df.columns.duplicated()]
 
 # ===============================
 # 📊 HISTÓRICO
