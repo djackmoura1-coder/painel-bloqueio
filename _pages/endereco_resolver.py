@@ -62,9 +62,10 @@ df.columns = (
 )
 
 df["status"] = df["status"].astype(str).str.strip().str.lower()
+df["resultado"] = df["resultado"].fillna("pendente").astype(str).str.strip().str.lower()
 
 # ===============================
-# 📊 DASH STATUS
+# 📊 DASH STATUS (TOPO)
 # ===============================
 pendentes = len(df[df["status"] == "pendente"])
 tratativa = len(df[df["status"] == "em tratativa"])
@@ -113,7 +114,7 @@ if not pendentes_df.empty:
 
     acao = st.radio(
         "Resultado",
-        ["Atualizado", "Não atualizado"]
+        ["Resolvido", "Não resolvido"]
     )
 
     if bloqueado_resolucao:
@@ -124,13 +125,13 @@ if not pendentes_df.empty:
     if botao and not bloqueado_resolucao:
 
         df.loc[df["rastreio"] == rastreio, "status"] = "finalizado"
-        df.loc[df["rastreio"] == rastreio, "resultado"] = acao
+        df.loc[df["rastreio"] == rastreio, "resultado"] = acao.lower()
 
         email_cliente = df.loc[df["rastreio"] == rastreio, "email"].values[0]
 
         sheet.update([df.columns.tolist()] + df.values.tolist())
 
-        if acao == "Não atualizado":
+        if acao == "Não resolvido":
             mensagem_extra = """
 
 Não foi atualizado. Por favor, solicite ao cliente que recuse o pedido ou, se preferir, que seja feito um acordo dentro da resolução.
@@ -183,19 +184,21 @@ else:
     st.info("Sem solicitações pendentes")
 
 # ===============================
-# 🎨 STATUS VISUAL
+# 🎨 RESULTADO VISUAL (BOLINHA)
 # ===============================
-def status_colorido(status):
-    if status == "pendente":
-        return "🟡"
-    elif status == "em tratativa":
-        return "🟠"
-    elif status == "finalizado":
+def resultado_colorido(resultado):
+    if resultado == "não resolvido":
+        return "🔴"
+    elif resultado == "resolvido":
         return "🟢"
+    elif resultado == "pendente":
+        return "🟡"
+    elif resultado == "em tratativa":
+        return "🟠"
     else:
         return "⚪"
 
-df["status_visual"] = df["status"].apply(status_colorido)
+df["resultado_visual"] = df["resultado"].apply(resultado_colorido)
 
 # 🔥 REMOVE COLUNAS DUPLICADAS
 df = df.loc[:, ~df.columns.duplicated()]
@@ -205,9 +208,9 @@ df = df.loc[:, ~df.columns.duplicated()]
 # ===============================
 st.subheader("📊 Histórico")
 
-colunas = [col for col in df.columns if col != "status_visual"]
+colunas = [col for col in df.columns if col != "resultado_visual"]
 
 st.dataframe(
-    df[["status_visual"] + colunas],
+    df[["resultado_visual"] + colunas],
     use_container_width=True
 )
