@@ -75,7 +75,6 @@ if df.empty:
     st.warning("Nenhum produto cadastrado.")
     st.stop()
 
-# 🔥 NORMALIZA COLUNAS
 df.columns = df.columns.str.strip().str.lower()
 
 def to_int(valor):
@@ -85,12 +84,12 @@ def to_int(valor):
         return 0
 
 # ===============================
-# 🚨 ALERTA GERAL
+# 🚨 ALERTA GERAL (200)
 # ===============================
-itens_criticos = df[df["quantidade_inicial"].apply(to_int) <= 100]
+itens_criticos = df[df["quantidade_inicial"].apply(to_int) <= 200]
 
 if not itens_criticos.empty:
-    st.error(f"🚨 {len(itens_criticos)} itens com estoque crítico (≤ 100 unidades)")
+    st.error(f"🚨 {len(itens_criticos)} itens com estoque crítico (≤ 200 unidades)")
 
 # ===============================
 # 🔍 PRODUTO
@@ -103,8 +102,8 @@ estoque_atual = to_int(linha.get("quantidade_inicial", 0))
 quantidade_total = to_int(linha.get("quantidade_total", 0))
 quantidade_base = to_int(linha.get("quantidade_base", 0))
 
-# 🚨 ALERTA INDIVIDUAL
-if estoque_atual <= 100:
+# 🚨 ALERTA INDIVIDUAL (200)
+if estoque_atual <= 200:
     st.error(f"🚨 Estoque baixo: {estoque_atual} unidades")
 else:
     st.info(f"📦 Estoque atual: {estoque_atual}")
@@ -120,7 +119,7 @@ if not df_log.empty:
 
     df_log = df_log[
         (df_log["produto"] == produto) &
-        (df_log["tipo"] == "Baixa")
+        (df_log["tipo"] == "baixa")
     ]
 
     consumido = df_log["quantidade"].apply(to_int).sum() if not df_log.empty else 0
@@ -171,7 +170,7 @@ with col_a:
             str(datetime.now()),
             st.session_state.get("usuario"),
             produto,
-            "Entrada",
+            "entrada",
             quantidade,
             nova_qtd
         ])
@@ -197,7 +196,7 @@ with col_b:
                 str(datetime.now()),
                 st.session_state.get("usuario"),
                 produto,
-                "Baixa",
+                "baixa",
                 quantidade,
                 nova_qtd
             ])
@@ -211,7 +210,7 @@ with col_b:
 st.subheader("📊 Visão Geral do Estoque")
 
 def destacar_estoque(row):
-    if to_int(row["quantidade_inicial"]) <= 100:
+    if to_int(row["quantidade_inicial"]) <= 200:
         return ["background-color: #ffcccc"] * len(row)
     return [""] * len(row)
 
