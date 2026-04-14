@@ -184,19 +184,19 @@ else:
     st.info("Sem solicitações pendentes")
 
 # ===============================
-# 🎨 RESULTADO FORMATADO (BOLINHA + TEXTO)
+# 🎨 RESULTADO FORMATADO (BOLINHA NO FINAL)
 # ===============================
 def resultado_formatado(resultado):
     resultado = str(resultado).lower().strip()
 
     if resultado == "não resolvido":
-        return "🔴 Não resolvido"
+        return "Não resolvido 🔴"
     elif resultado == "resolvido":
-        return "🟢 Resolvido"
+        return "Resolvido 🟢"
     elif resultado == "pendente":
-        return "🟡 Pendente"
+        return "Pendente 🟡"
     elif resultado == "em tratativa":
-        return "🟠 Em tratativa"
+        return "Em tratativa 🟠"
     else:
         return resultado
 
