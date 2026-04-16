@@ -9,6 +9,55 @@ st.set_page_config(
     layout="wide"
 )
 
+# ===============================
+# 🎨 CSS + ANIMAÇÃO
+# ===============================
+st.markdown("""
+<style>
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    z-index: 999;
+    padding: 10px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.notif-btn {
+    font-size: 22px;
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    transition: 0.2s;
+}
+
+.notif-btn:hover {
+    background-color: #eaeaea;
+}
+
+@keyframes shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(10deg); }
+    50% { transform: rotate(-10deg); }
+    75% { transform: rotate(8deg); }
+    100% { transform: rotate(0deg); }
+}
+
+.shake {
+    animation: shake 0.8s infinite;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# 🔥 espaço topo
+st.markdown("<div style='height:60px'></div>", unsafe_allow_html=True)
+
 # 🔥 LOGO TOPO
 st.image("assets/logo_petiko.png", width=180)
 
@@ -99,7 +148,72 @@ if not st.session_state.logado:
 # ===============================
 else:
 
+    # ===============================
+    # 🔔 NOTIFICAÇÕES
+    # ===============================
+    sheet_notif = spreadsheet.worksheet("notificacoes")
+    df_notif = pd.DataFrame(sheet_notif.get_all_records())
+
+    if not df_notif.empty:
+        df_notif.columns = df_notif.columns.str.strip().str.lower()
+
+        usuario_logado = st.session_state.get("usuario")
+
+        minhas = df_notif[df_notif["para"] == usuario_logado]
+        nao_lidas = minhas[minhas["status"] == "nao lida"]
+
+        qtd_notif = len(nao_lidas)
+    else:
+        qtd_notif = 0
+        minhas = pd.DataFrame()
+
+    # 🔥 animação
+    classe_animacao = "notif-btn"
+    if qtd_notif > 0:
+        classe_animacao += " shake"
+
+    # 🔔 topo visual
+    st.markdown(f"""
+    <div class="top-bar">
+        <div class="{classe_animacao}">
+            🔔 {qtd_notif}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 🔔 botão funcional
+    if st.button(f"🔔 {qtd_notif}", key="abrir_notif"):
+        st.session_state.abrir_notif = not st.session_state.get("abrir_notif", False)
+
+    # 🔔 painel
+    if st.session_state.get("abrir_notif", False):
+
+        st.markdown("### 📩 Notificações")
+
+        if minhas.empty:
+            st.info("Sem notificações")
+        else:
+            for i, row in minhas.iterrows():
+
+                if row["status"] == "nao lida":
+                    st.warning(f"🔔 {row['mensagem']}")
+                else:
+                    st.info(f"🔕 {row['mensagem']}")
+
+                if row["status"] == "nao lida":
+                    if st.button(f"Marcar como lida {i}"):
+
+                        df_notif.loc[i, "status"] = "lida"
+
+                        sheet_notif.update(
+                            [df_notif.columns.tolist()] + df_notif.values.tolist()
+                        )
+
+                        st.rerun()
+
+    # ===============================
     # 🔥 SIDEBAR
+    # ===============================
     st.sidebar.image("assets/logo_petiko.png", width=150)
 
     st.sidebar.success(f"👤 {st.session_state.usuario}")
@@ -150,7 +264,7 @@ else:
                 "Cadastro de Produtos",
                 "Baixa de Estoque",
                 "Planejamento Operacional",
-                "Contador de Itens"  # 🔥 NOVO
+                "Contador de Itens"
             ]
         )
 
@@ -180,7 +294,7 @@ else:
         elif pagina == "Planejamento Operacional":
             exec(open("_pages/planejamento.py").read())
 
-        elif pagina == "Contador de Itens":  # 🔥 NOVO
+        elif pagina == "Contador de Itens":
             exec(open("_pages/contador_itens.py").read())
 
     except Exception as e:
