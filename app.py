@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS + ANIMAÇÃO
+# 🎨 CSS DARK + ANIMAÇÃO
 # ===============================
 st.markdown("""
 <style>
@@ -19,17 +19,16 @@ st.markdown("""
     top: 0;
     left: 0;
     width: 100%;
-    background-color: white;
+    background-color: #0e1117;
     z-index: 999;
     padding: 10px 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #262730;
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    box-shadow: 0px 2px 8px rgba(0,0,0,0.05);
 }
 
-/* 🔥 empurra conteúdo corretamente */
+/* empurra conteúdo corretamente */
 .block-container {
     padding-top: 80px !important;
 }
@@ -38,7 +37,12 @@ st.markdown("""
     font-size: 22px;
     padding: 8px 14px;
     border-radius: 10px;
-    background-color: #f5f5f5;
+    background-color: #262730;
+    color: white;
+}
+
+.notif-btn:hover {
+    background-color: #31333F;
 }
 
 @keyframes shake {
@@ -183,7 +187,7 @@ else:
     if qtd_notif > 0:
         classe_animacao += " shake"
 
-    # 🔔 topo visual
+    # 🔔 TOPO
     st.markdown(f"""
     <div class="top-bar">
         <div class="{classe_animacao}">
@@ -192,14 +196,14 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    # 🔔 botão funcional
+    # 🔔 BOTÃO FUNCIONAL
     st.button(
         f"🔔 {qtd_notif}",
         key="abrir_notif_btn",
         on_click=toggle_notif
     )
 
-    # 🔔 painel
+    # 🔔 PAINEL
     if st.session_state.abrir_notif:
 
         st.markdown("### 📩 Notificações")
@@ -238,14 +242,14 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    # 🔥 TÍTULO
+    # título
     st.markdown(
         "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
         unsafe_allow_html=True
     )
 
     # ===============================
-    # 🎯 MENU
+    # MENU
     # ===============================
     st.sidebar.divider()
     st.sidebar.subheader("📂 Menu")
@@ -278,7 +282,7 @@ else:
         )
 
     # ===============================
-    # 🔗 NAVEGAÇÃO
+    # NAVEGAÇÃO
     # ===============================
     try:
 
