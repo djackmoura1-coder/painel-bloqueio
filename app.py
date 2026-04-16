@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS
+# 🎨 CSS FINAL
 # ===============================
 st.markdown("""
 <style>
@@ -53,6 +53,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# 🔥 LOGO
 st.image("assets/logo_petiko.png", width=180)
 
 # ===============================
@@ -69,101 +70,247 @@ credentials = Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(credentials)
-spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+
+try:
+    spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+except:
+    st.error("Erro ao conectar com a planilha")
+    st.stop()
 
 # ===============================
-# 🔐 LOGIN MOCK (ajuste se quiser)
+# 👤 USUÁRIOS
+# ===============================
+sheet_users = spreadsheet.worksheet("usuarios")
+df_users = pd.DataFrame(sheet_users.get_all_records())
+
+if not df_users.empty:
+    df_users.columns = df_users.columns.str.strip().str.lower()
+
+    for col in ["usuario", "senha", "email", "perfil", "departamento"]:
+        if col not in df_users.columns:
+            df_users[col] = ""
+
+    df_users = df_users.fillna("").astype(str).apply(lambda x: x.str.strip())
+
+# ===============================
+# 🔐 SESSION
 # ===============================
 if "logado" not in st.session_state:
-    st.session_state.logado = True
-    st.session_state.usuario = "Djack"
-    st.session_state.email = "djack-moura@petiko.com.br"
+    st.session_state.logado = False
 
 # ===============================
-# 🔔 CONTROLE
+# 🔐 LOGIN
 # ===============================
-if "abrir_notif" not in st.session_state:
-    st.session_state.abrir_notif = False
+if not st.session_state.logado:
 
-def toggle_notif():
-    st.session_state.abrir_notif = not st.session_state.abrir_notif
+    st.title("🔐 Login do Sistema")
 
-# ===============================
-# 🔔 DADOS
-# ===============================
-try:
-    sheet_notif = spreadsheet.worksheet("notificacoes")
-    df_notif = pd.DataFrame(sheet_notif.get_all_records())
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
 
-    if not df_notif.empty:
+    if st.button("Entrar"):
 
-        df_notif.columns = df_notif.columns.str.strip().str.lower()
+        usuario = usuario.strip()
+        senha = senha.strip()
 
-        # 🔥 CORRIGE NOME
-        if "menssagem" in df_notif.columns:
-            df_notif["mensagem_final"] = df_notif["menssagem"]
+        if usuario == "admin" and senha == "123456":
+            st.session_state.logado = True
+            st.session_state.usuario = "admin"
+            st.session_state.perfil = "admin"
+            st.session_state.departamento = "Admin"
+            st.session_state.email = "admin@empresa.com"
+            st.rerun()
+
+        user = df_users[df_users["usuario"] == usuario]
+
+        if not user.empty:
+            user = user.iloc[0]
+
+            if user["senha"] == senha:
+                st.session_state.logado = True
+                st.session_state.usuario = usuario
+                st.session_state.perfil = user["perfil"]
+                st.session_state.departamento = user["departamento"]
+                st.session_state.email = user["email"]
+                st.rerun()
+            else:
+                st.error("Senha incorreta")
         else:
-            df_notif["mensagem_final"] = df_notif.get("mensagem", "")
+            st.error("Usuário não encontrado")
 
-        # 🔥 GARANTE STATUS
-        if "status" not in df_notif.columns:
-            df_notif["status"] = "nao lida"
+# ===============================
+# 🚀 SISTEMA
+# ===============================
+else:
 
-        usuario = st.session_state.usuario.lower()
-        email = st.session_state.email.lower()
+    # ===============================
+    # 🔔 CONTROLE ESTADO
+    # ===============================
+    if "abrir_notif" not in st.session_state:
+        st.session_state.abrir_notif = False
 
-        # 🔥 FILTRO FLEXÍVEL
-        df_notif["para"] = df_notif["para"].astype(str).str.lower()
+    def toggle_notif():
+        st.session_state.abrir_notif = not st.session_state.abrir_notif
 
-        minhas = df_notif[
-            (df_notif["para"] == usuario) |
-            (df_notif["para"] == email)
-        ]
+    # ===============================
+    # 🔔 DADOS NOTIFICAÇÕES
+    # ===============================
+    try:
+        sheet_notif = spreadsheet.worksheet("notificacoes")
+        df_notif = pd.DataFrame(sheet_notif.get_all_records())
 
-        nao_lidas = minhas[minhas["status"] == "nao lida"]
+        if not df_notif.empty:
 
-        qtd_notif = len(nao_lidas)
+            df_notif.columns = df_notif.columns.str.strip().str.lower()
 
-    else:
+            # aceita "menssagem"
+            if "menssagem" in df_notif.columns:
+                df_notif["mensagem_final"] = df_notif["menssagem"]
+            else:
+                df_notif["mensagem_final"] = df_notif.get("mensagem", "")
+
+            if "status" not in df_notif.columns:
+                df_notif["status"] = "nao lida"
+
+            usuario = str(st.session_state.get("usuario", "")).lower()
+            email = str(st.session_state.get("email", "")).lower()
+
+            df_notif["para"] = df_notif["para"].astype(str).str.lower()
+
+            minhas = df_notif[
+                (df_notif["para"] == usuario) |
+                (df_notif["para"] == email)
+            ]
+
+            nao_lidas = minhas[minhas["status"] == "nao lida"]
+
+            qtd_notif = len(nao_lidas)
+
+        else:
+            qtd_notif = 0
+            minhas = pd.DataFrame()
+
+    except:
         qtd_notif = 0
         minhas = pd.DataFrame()
 
-except:
-    qtd_notif = 0
-    minhas = pd.DataFrame()
+    # 🔔 animação
+    classe = "notif-btn"
+    if qtd_notif > 0:
+        classe += " shake"
 
-# ===============================
-# 🔔 TOPO
-# ===============================
-classe = "notif-btn"
-if qtd_notif > 0:
-    classe += " shake"
-
-st.markdown(f"""
-<div class="top-bar">
-    <div class="{classe}">
-        🔔 {qtd_notif}
+    # 🔔 topo
+    st.markdown(f"""
+    <div class="top-bar">
+        <div class="{classe}">
+            🔔 {qtd_notif}
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-st.button("🔔", on_click=toggle_notif)
+    # 🔔 botão
+    st.button(
+        f"🔔 {qtd_notif}",
+        key="abrir_notif_btn",
+        on_click=toggle_notif
+    )
 
-# ===============================
-# 🔔 PAINEL
-# ===============================
-if st.session_state.abrir_notif:
+    # 🔔 painel
+    if st.session_state.abrir_notif:
 
-    st.subheader("📩 Notificações")
+        st.markdown("### 📩 Notificações")
 
-    if minhas.empty:
-        st.warning("Nenhuma notificação encontrada para você")
-    else:
-        for i, row in minhas.iterrows():
+        if minhas.empty:
+            st.warning("Nenhuma notificação encontrada")
+        else:
+            for i, row in minhas.iterrows():
 
-            msg = row.get("mensagem_final", "")
+                msg = row.get("mensagem_final", "")
 
-            if row["status"] == "nao lida":
-                st.warning(f"🔔 {msg}")
-            else:
-                st.info(f"🔕 {msg}")
+                if row["status"] == "nao lida":
+                    st.warning(f"🔔 {msg}")
+                else:
+                    st.info(f"🔕 {msg}")
+
+    # ===============================
+    # SIDEBAR
+    # ===============================
+    st.sidebar.image("assets/logo_petiko.png", width=150)
+
+    st.sidebar.success(f"👤 {st.session_state.usuario}")
+    st.sidebar.write(f"🏢 {st.session_state.departamento}")
+    st.sidebar.write(f"📧 {st.session_state.email}")
+
+    if st.sidebar.button("Sair"):
+        st.session_state.clear()
+        st.rerun()
+
+    st.markdown(
+        "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
+        unsafe_allow_html=True
+    )
+
+    # ===============================
+    # MENU
+    # ===============================
+    st.sidebar.divider()
+    st.sidebar.subheader("📂 Menu")
+
+    menu_principal = st.sidebar.radio(
+        "Selecione o módulo:",
+        ["Atendimento & Logística", "Estoque"]
+    )
+
+    if menu_principal == "Atendimento & Logística":
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Endereço - Solicitar",
+                "Endereço - Resolver",
+                "Bloqueio - Solicitar",
+                "Bloqueio - Resolver"
+            ]
+        )
+
+    elif menu_principal == "Estoque":
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Cadastro de Produtos",
+                "Baixa de Estoque",
+                "Planejamento Operacional",
+                "Contador de Itens"
+            ]
+        )
+
+    # ===============================
+    # NAVEGAÇÃO
+    # ===============================
+    try:
+
+        if pagina == "Endereço - Solicitar":
+            exec(open("_pages/endereco_solicitar.py").read())
+
+        elif pagina == "Endereço - Resolver":
+            exec(open("_pages/endereco_resolver.py").read())
+
+        elif pagina == "Bloqueio - Solicitar":
+            exec(open("_pages/solicitar.py").read())
+
+        elif pagina == "Bloqueio - Resolver":
+            exec(open("_pages/resolver.py").read())
+
+        elif pagina == "Cadastro de Produtos":
+            exec(open("_pages/cadastro_produtos.py").read())
+
+        elif pagina == "Baixa de Estoque":
+            exec(open("_pages/baixa_estoque.py").read())
+
+        elif pagina == "Planejamento Operacional":
+            exec(open("_pages/planejamento.py").read())
+
+        elif pagina == "Contador de Itens":
+            exec(open("_pages/contador_itens.py").read())
+
+    except Exception as e:
+        st.error(f"Erro ao carregar página: {e}")
