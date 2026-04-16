@@ -10,45 +10,12 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS FINAL
+# 🎨 CSS LIMPO
 # ===============================
 st.markdown("""
 <style>
 .block-container {
-    padding-top: 80px !important;
-}
-
-.top-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background-color: #0e1117;
-    z-index: 9999;
-    padding: 10px 15px;
-    border-bottom: 1px solid #262730;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.notif-btn {
-    font-size: 22px;
-    padding: 8px 14px;
-    border-radius: 10px;
-    background-color: #262730;
-    color: white;
-}
-
-@keyframes shake {
-    0% { transform: rotate(0deg); }
-    25% { transform: rotate(10deg); }
-    50% { transform: rotate(-10deg); }
-    75% { transform: rotate(8deg); }
-    100% { transform: rotate(0deg); }
-}
-
-.shake {
-    animation: shake 0.8s infinite;
+    padding-top: 20px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -144,95 +111,6 @@ if not st.session_state.logado:
 else:
 
     # ===============================
-    # 🔔 CONTROLE ESTADO
-    # ===============================
-    if "abrir_notif" not in st.session_state:
-        st.session_state.abrir_notif = False
-
-    def toggle_notif():
-        st.session_state.abrir_notif = not st.session_state.abrir_notif
-
-    # ===============================
-    # 🔔 DADOS NOTIFICAÇÕES
-    # ===============================
-    try:
-        sheet_notif = spreadsheet.worksheet("notificacoes")
-        df_notif = pd.DataFrame(sheet_notif.get_all_records())
-
-        if not df_notif.empty:
-
-            df_notif.columns = df_notif.columns.str.strip().str.lower()
-
-            # aceita "menssagem"
-            if "menssagem" in df_notif.columns:
-                df_notif["mensagem_final"] = df_notif["menssagem"]
-            else:
-                df_notif["mensagem_final"] = df_notif.get("mensagem", "")
-
-            if "status" not in df_notif.columns:
-                df_notif["status"] = "nao lida"
-
-            usuario = str(st.session_state.get("usuario", "")).lower()
-            email = str(st.session_state.get("email", "")).lower()
-
-            df_notif["para"] = df_notif["para"].astype(str).str.lower()
-
-            minhas = df_notif[
-                (df_notif["para"] == usuario) |
-                (df_notif["para"] == email)
-            ]
-
-            nao_lidas = minhas[minhas["status"] == "nao lida"]
-
-            qtd_notif = len(nao_lidas)
-
-        else:
-            qtd_notif = 0
-            minhas = pd.DataFrame()
-
-    except:
-        qtd_notif = 0
-        minhas = pd.DataFrame()
-
-    # 🔔 animação
-    classe = "notif-btn"
-    if qtd_notif > 0:
-        classe += " shake"
-
-    # 🔔 topo
-    st.markdown(f"""
-    <div class="top-bar">
-        <div class="{classe}">
-            🔔 {qtd_notif}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 🔔 botão
-    st.button(
-        f"🔔 {qtd_notif}",
-        key="abrir_notif_btn",
-        on_click=toggle_notif
-    )
-
-    # 🔔 painel
-    if st.session_state.abrir_notif:
-
-        st.markdown("### 📩 Notificações")
-
-        if minhas.empty:
-            st.warning("Nenhuma notificação encontrada")
-        else:
-            for i, row in minhas.iterrows():
-
-                msg = row.get("mensagem_final", "")
-
-                if row["status"] == "nao lida":
-                    st.warning(f"🔔 {msg}")
-                else:
-                    st.info(f"🔕 {msg}")
-
-    # ===============================
     # SIDEBAR
     # ===============================
     st.sidebar.image("assets/logo_petiko.png", width=150)
@@ -245,6 +123,9 @@ else:
         st.session_state.clear()
         st.rerun()
 
+    # ===============================
+    # TÍTULO
+    # ===============================
     st.markdown(
         "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
         unsafe_allow_html=True
