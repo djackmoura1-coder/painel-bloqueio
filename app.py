@@ -26,6 +26,12 @@ st.markdown("""
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.05);
+}
+
+/* 🔥 empurra conteúdo corretamente */
+.block-container {
+    padding-top: 80px !important;
 }
 
 .notif-btn {
@@ -49,10 +55,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# espaço topo
-st.markdown("<div style='height:60px'></div>", unsafe_allow_html=True)
-
-# logo
+# 🔥 LOGO
 st.image("assets/logo_petiko.png", width=180)
 
 # ===============================
@@ -175,14 +178,12 @@ else:
         qtd_notif = 0
         minhas = pd.DataFrame()
 
-    # ===============================
-    # 🔔 ANIMAÇÃO
-    # ===============================
+    # 🔥 animação
     classe_animacao = "notif-btn"
     if qtd_notif > 0:
         classe_animacao += " shake"
 
-    # 🔔 VISUAL TOPO
+    # 🔔 topo visual
     st.markdown(f"""
     <div class="top-bar">
         <div class="{classe_animacao}">
@@ -191,14 +192,14 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    # 🔔 BOTÃO FUNCIONAL
+    # 🔔 botão funcional
     st.button(
         f"🔔 {qtd_notif}",
         key="abrir_notif_btn",
         on_click=toggle_notif
     )
 
-    # 🔔 PAINEL
+    # 🔔 painel
     if st.session_state.abrir_notif:
 
         st.markdown("### 📩 Notificações")
@@ -237,14 +238,14 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    # título
+    # 🔥 TÍTULO
     st.markdown(
         "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
         unsafe_allow_html=True
     )
 
     # ===============================
-    # MENU
+    # 🎯 MENU
     # ===============================
     st.sidebar.divider()
     st.sidebar.subheader("📂 Menu")
@@ -277,7 +278,7 @@ else:
         )
 
     # ===============================
-    # NAVEGAÇÃO
+    # 🔗 NAVEGAÇÃO
     # ===============================
     try:
 
