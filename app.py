@@ -10,25 +10,26 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS DARK + ANIMAÇÃO
+# 🎨 CSS DARK + ANIMAÇÃO + POSIÇÃO
 # ===============================
 st.markdown("""
 <style>
 .top-bar {
     position: fixed;
     top: 0;
-    left: 0;
+    right: 0;
     width: 100%;
     background-color: #0e1117;
     z-index: 999;
-    padding: 10px 20px;
+    padding: 10px 15px;
     border-bottom: 1px solid #262730;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    margin-right: -10px;
 }
 
-/* empurra conteúdo corretamente */
+/* empurra conteúdo */
 .block-container {
     padding-top: 80px !important;
 }
@@ -150,7 +151,7 @@ if not st.session_state.logado:
 else:
 
     # ===============================
-    # 🔔 CONTROLE DE ESTADO
+    # 🔔 CONTROLE ESTADO
     # ===============================
     if "abrir_notif" not in st.session_state:
         st.session_state.abrir_notif = False
@@ -196,7 +197,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    # 🔔 BOTÃO FUNCIONAL
+    # 🔔 BOTÃO
     st.button(
         f"🔔 {qtd_notif}",
         key="abrir_notif_btn",
@@ -230,7 +231,7 @@ else:
                         st.rerun()
 
     # ===============================
-    # 🔥 SIDEBAR
+    # SIDEBAR
     # ===============================
     st.sidebar.image("assets/logo_petiko.png", width=150)
 
