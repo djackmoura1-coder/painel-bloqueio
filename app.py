@@ -30,15 +30,9 @@ st.markdown("""
 
 .notif-btn {
     font-size: 22px;
-    cursor: pointer;
     padding: 8px 14px;
     border-radius: 10px;
     background-color: #f5f5f5;
-    transition: 0.2s;
-}
-
-.notif-btn:hover {
-    background-color: #eaeaea;
 }
 
 @keyframes shake {
@@ -55,10 +49,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🔥 Espaço topo
+# espaço topo
 st.markdown("<div style='height:60px'></div>", unsafe_allow_html=True)
 
-# 🔥 LOGO
+# logo
 st.image("assets/logo_petiko.png", width=180)
 
 # ===============================
@@ -149,7 +143,16 @@ if not st.session_state.logado:
 else:
 
     # ===============================
-    # 🔔 NOTIFICAÇÕES
+    # 🔔 CONTROLE DE ESTADO
+    # ===============================
+    if "abrir_notif" not in st.session_state:
+        st.session_state.abrir_notif = False
+
+    def toggle_notif():
+        st.session_state.abrir_notif = not st.session_state.abrir_notif
+
+    # ===============================
+    # 🔔 DADOS NOTIFICAÇÕES
     # ===============================
     try:
         sheet_notif = spreadsheet.worksheet("notificacoes")
@@ -172,12 +175,14 @@ else:
         qtd_notif = 0
         minhas = pd.DataFrame()
 
-    # 🔥 animação
+    # ===============================
+    # 🔔 ANIMAÇÃO
+    # ===============================
     classe_animacao = "notif-btn"
     if qtd_notif > 0:
         classe_animacao += " shake"
 
-    # 🔔 topo visual
+    # 🔔 VISUAL TOPO
     st.markdown(f"""
     <div class="top-bar">
         <div class="{classe_animacao}">
@@ -186,12 +191,15 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    # 🔔 botão funcional
-    if st.button(f"🔔 {qtd_notif}", key="abrir_notif"):
-        st.session_state.abrir_notif = not st.session_state.get("abrir_notif", False)
+    # 🔔 BOTÃO FUNCIONAL
+    st.button(
+        f"🔔 {qtd_notif}",
+        key="abrir_notif_btn",
+        on_click=toggle_notif
+    )
 
-    # 🔔 painel
-    if st.session_state.get("abrir_notif", False):
+    # 🔔 PAINEL
+    if st.session_state.abrir_notif:
 
         st.markdown("### 📩 Notificações")
 
@@ -229,14 +237,14 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    # 🔥 TÍTULO
+    # título
     st.markdown(
         "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
         unsafe_allow_html=True
     )
 
     # ===============================
-    # 🎯 MENU
+    # MENU
     # ===============================
     st.sidebar.divider()
     st.sidebar.subheader("📂 Menu")
@@ -269,7 +277,7 @@ else:
         )
 
     # ===============================
-    # 🔗 NAVEGAÇÃO
+    # NAVEGAÇÃO
     # ===============================
     try:
 
