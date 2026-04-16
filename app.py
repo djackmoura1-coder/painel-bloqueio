@@ -55,10 +55,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🔥 espaço topo
+# 🔥 Espaço topo
 st.markdown("<div style='height:60px'></div>", unsafe_allow_html=True)
 
-# 🔥 LOGO TOPO
+# 🔥 LOGO
 st.image("assets/logo_petiko.png", width=180)
 
 # ===============================
@@ -82,12 +82,12 @@ except:
     st.error("Erro ao conectar com a planilha")
     st.stop()
 
+# ===============================
+# 👤 USUÁRIOS
+# ===============================
 sheet_users = spreadsheet.worksheet("usuarios")
 df_users = pd.DataFrame(sheet_users.get_all_records())
 
-# ===============================
-# 🔄 NORMALIZAÇÃO
-# ===============================
 if not df_users.empty:
     df_users.columns = df_users.columns.str.strip().str.lower()
 
@@ -151,19 +151,24 @@ else:
     # ===============================
     # 🔔 NOTIFICAÇÕES
     # ===============================
-    sheet_notif = spreadsheet.worksheet("notificacoes")
-    df_notif = pd.DataFrame(sheet_notif.get_all_records())
+    try:
+        sheet_notif = spreadsheet.worksheet("notificacoes")
+        df_notif = pd.DataFrame(sheet_notif.get_all_records())
 
-    if not df_notif.empty:
-        df_notif.columns = df_notif.columns.str.strip().str.lower()
+        if not df_notif.empty:
+            df_notif.columns = df_notif.columns.str.strip().str.lower()
 
-        usuario_logado = st.session_state.get("usuario")
+            usuario_logado = st.session_state.get("usuario")
 
-        minhas = df_notif[df_notif["para"] == usuario_logado]
-        nao_lidas = minhas[minhas["status"] == "nao lida"]
+            minhas = df_notif[df_notif["para"] == usuario_logado]
+            nao_lidas = minhas[minhas["status"] == "nao lida"]
 
-        qtd_notif = len(nao_lidas)
-    else:
+            qtd_notif = len(nao_lidas)
+        else:
+            qtd_notif = 0
+            minhas = pd.DataFrame()
+
+    except:
         qtd_notif = 0
         minhas = pd.DataFrame()
 
@@ -231,7 +236,7 @@ else:
     )
 
     # ===============================
-    # 🎯 MENU PRINCIPAL
+    # 🎯 MENU
     # ===============================
     st.sidebar.divider()
     st.sidebar.subheader("📂 Menu")
@@ -241,11 +246,7 @@ else:
         ["Atendimento & Logística", "Estoque"]
     )
 
-    # ===============================
-    # 📂 SUBMENU
-    # ===============================
     if menu_principal == "Atendimento & Logística":
-
         pagina = st.sidebar.radio(
             "Páginas:",
             [
@@ -257,7 +258,6 @@ else:
         )
 
     elif menu_principal == "Estoque":
-
         pagina = st.sidebar.radio(
             "Páginas:",
             [
