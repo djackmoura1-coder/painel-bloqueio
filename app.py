@@ -10,30 +10,36 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS DARK + ANIMAÇÃO + POSIÇÃO
+# 🎨 CSS FINAL PROFISSIONAL
 # ===============================
 st.markdown("""
 <style>
+
+/* 🔥 REMOVE LIMITAÇÃO DO STREAMLIT */
+.block-container {
+    padding-top: 80px !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+/* 🔥 HEADER FIXO REAL */
 .top-bar {
     position: fixed;
     top: 0;
+    left: 0;
     right: 0;
     width: 100%;
     background-color: #0e1117;
-    z-index: 999;
+    z-index: 9999;
     padding: 10px 15px;
     border-bottom: 1px solid #262730;
+
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    margin-right: -10px;
 }
 
-/* empurra conteúdo */
-.block-container {
-    padding-top: 80px !important;
-}
-
+/* 🔔 BOTÃO */
 .notif-btn {
     font-size: 22px;
     padding: 8px 14px;
@@ -42,10 +48,7 @@ st.markdown("""
     color: white;
 }
 
-.notif-btn:hover {
-    background-color: #31333F;
-}
-
+/* 🔥 ANIMAÇÃO */
 @keyframes shake {
     0% { transform: rotate(0deg); }
     25% { transform: rotate(10deg); }
@@ -57,6 +60,7 @@ st.markdown("""
 .shake {
     animation: shake 0.8s infinite;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -188,7 +192,7 @@ else:
     if qtd_notif > 0:
         classe_animacao += " shake"
 
-    # 🔔 TOPO
+    # 🔔 TOPO VISUAL
     st.markdown(f"""
     <div class="top-bar">
         <div class="{classe_animacao}">
@@ -197,7 +201,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    # 🔔 BOTÃO
+    # 🔔 BOTÃO FUNCIONAL
     st.button(
         f"🔔 {qtd_notif}",
         key="abrir_notif_btn",
@@ -243,7 +247,9 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    # título
+    # ===============================
+    # TÍTULO
+    # ===============================
     st.markdown(
         "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
         unsafe_allow_html=True
