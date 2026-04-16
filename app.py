@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS LIMPO
+# 🎨 CSS
 # ===============================
 st.markdown("""
 <style>
@@ -24,19 +24,24 @@ st.markdown("""
 st.image("assets/logo_petiko.png", width=180)
 
 # ===============================
-# 🔗 CONEXÃO
+# 🔗 CONEXÃO (OTIMIZADA)
 # ===============================
-scope = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
+@st.cache_resource
+def conectar_google():
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
 
-credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=scope
-)
+    credentials = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=scope
+    )
 
-client = gspread.authorize(credentials)
+    client = gspread.authorize(credentials)
+    return client
+
+client = conectar_google()
 
 try:
     spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
@@ -45,10 +50,14 @@ except:
     st.stop()
 
 # ===============================
-# 👤 USUÁRIOS
+# 👤 USUÁRIOS (SEM CACHE PRA NÃO DAR CONFLITO)
 # ===============================
-sheet_users = spreadsheet.worksheet("usuarios")
-df_users = pd.DataFrame(sheet_users.get_all_records())
+try:
+    sheet_users = spreadsheet.worksheet("usuarios")
+    df_users = pd.DataFrame(sheet_users.get_all_records())
+except:
+    st.error("Erro ao carregar usuários")
+    st.stop()
 
 if not df_users.empty:
     df_users.columns = df_users.columns.str.strip().str.lower()
