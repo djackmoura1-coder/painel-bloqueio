@@ -10,18 +10,22 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS
+# 🎨 CSS AJUSTADO
 # ===============================
 st.markdown("""
 <style>
 .block-container {
-    padding-top: 20px !important;
+    padding-top: 10px !important;
+}
+img {
+    max-width: 100%;
+    height: auto;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# 🔥 LOGO
-st.image("assets/logo_petiko.png", width=180)
+# 🔥 LOGO (CORRIGIDA)
+st.image("assets/logo_petiko.png", width=220)
 
 # ===============================
 # 🔗 CONEXÃO
