@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
 
 # 🔒 LOGIN
 if "logado" not in st.session_state or not st.session_state.logado:
@@ -45,7 +44,7 @@ if not df.empty:
     df.columns = df.columns.str.strip().str.lower()
 
 # ===============================
-# 📢 AVISO PARA ATENDIMENTO
+# 📢 AVISO
 # ===============================
 st.info("""
 📢 **Importante:**
@@ -68,11 +67,12 @@ else:
 st.success(f"📅 Última atualização: {ultima_atualizacao}")
 
 # ===============================
-# 🔄 RENOMEAR COLUNAS (LINGUAGEM SIMPLES)
+# 🔄 RENOMEAR COLUNAS
 # ===============================
 df = df.rename(columns={
     "data_impressao": "Data do Pedido",
-    "previsao_expedicao": "Previsão de Envio"
+    "previsao_expedicao": "Previsão de Envio",
+    "status": "Status"
 })
 
 # ===============================
@@ -84,24 +84,25 @@ if busca:
     df = df[df["Data do Pedido"].astype(str).str.contains(busca)]
 
 # ===============================
-# 🔴 STATUS
+# 🎯 STATUS COM BOLINHA
 # ===============================
-def status(row):
-    try:
-        hoje = datetime.now().date()
-        previsao = datetime.strptime(row["Previsão de Envio"], "%d/%m/%Y").date()
-
-        if previsao < hoje:
-            return "🔴 Atrasado"
-        elif previsao == hoje:
-            return "🟡 Envia hoje"
-        else:
-            return "🟢 Dentro do prazo"
-    except:
+def formatar_status(valor):
+    if not isinstance(valor, str):
         return "-"
+    
+    valor = valor.lower().strip()
 
-if not df.empty:
-    df["Status"] = df.apply(status, axis=1)
+    if valor == "atrasado":
+        return "🔴 Atrasado"
+    elif valor == "atenção":
+        return "🟡 Atenção"
+    elif valor == "no prazo":
+        return "🟢 No prazo"
+    else:
+        return valor
+
+if "Status" in df.columns:
+    df["Status"] = df["Status"].apply(formatar_status)
 
 # ===============================
 # 📊 ORDENAÇÃO
