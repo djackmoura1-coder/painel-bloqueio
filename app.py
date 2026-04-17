@@ -3,208 +3,68 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
-st.set_page_config(
-    page_title="Sistema de Bloqueio",
-    page_icon="assets/logo_petiko.png",
-    layout="wide"
+# 🔒 LOGIN
+if "logado" not in st.session_state or not st.session_state.logado:
+    st.warning("🔒 Faça login")
+    st.stop()
+
+st.title("📦 Previsão de Postagem")
+
+# ===============================
+# 🔗 CONEXÃO
+# ===============================
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=scope
 )
 
-# ===============================
-# 🎨 CSS
-# ===============================
-st.markdown("""
-<style>
-.block-container {
-    padding-top: 20px !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# 🔥 LOGO
-st.image("assets/logo_petiko.png", width=180)
+client = gspread.authorize(credentials)
+spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
 
 # ===============================
-# 🔗 CONEXÃO (OTIMIZADA)
+# 📊 DADOS
 # ===============================
-@st.cache_resource
-def conectar_google():
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    credentials = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"],
-        scopes=scope
-    )
-
-    client = gspread.authorize(credentials)
-    return client
-
-client = conectar_google()
-
 try:
-    spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+    sheet = spreadsheet.worksheet("previsao_postagem")
+    dados = sheet.get_all_records()
+    df = pd.DataFrame(dados)
 except:
-    st.error("Erro ao conectar com a planilha")
+    st.error("Erro ao carregar a aba previsao_postagem")
     st.stop()
 
 # ===============================
-# 👤 USUÁRIOS
+# 🔥 NORMALIZAÇÃO
 # ===============================
-try:
-    sheet_users = spreadsheet.worksheet("usuarios")
-    df_users = pd.DataFrame(sheet_users.get_all_records())
-except:
-    st.error("Erro ao carregar usuários")
-    st.stop()
-
-if not df_users.empty:
-    df_users.columns = df_users.columns.str.strip().str.lower()
-
-    for col in ["usuario", "senha", "email", "perfil", "departamento"]:
-        if col not in df_users.columns:
-            df_users[col] = ""
-
-    df_users = df_users.fillna("").astype(str).apply(lambda x: x.str.strip())
+if not df.empty:
+    df.columns = df.columns.str.strip().str.lower()
 
 # ===============================
-# 🔐 SESSION
+# 📊 VISUAL
 # ===============================
-if "logado" not in st.session_state:
-    st.session_state.logado = False
+st.subheader("📊 Planejamento de Expedição")
 
-# ===============================
-# 🔐 LOGIN
-# ===============================
-if not st.session_state.logado:
-
-    st.title("🔐 Login do Sistema")
-
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
-
-    if st.button("Entrar"):
-
-        usuario = usuario.strip()
-        senha = senha.strip()
-
-        if usuario == "admin" and senha == "123456":
-            st.session_state.logado = True
-            st.session_state.usuario = "admin"
-            st.session_state.perfil = "admin"
-            st.session_state.departamento = "Admin"
-            st.session_state.email = "admin@empresa.com"
-            st.rerun()
-
-        user = df_users[df_users["usuario"] == usuario]
-
-        if not user.empty:
-            user = user.iloc[0]
-
-            if user["senha"] == senha:
-                st.session_state.logado = True
-                st.session_state.usuario = usuario
-                st.session_state.perfil = user["perfil"]
-                st.session_state.departamento = user["departamento"]
-                st.session_state.email = user["email"]
-                st.rerun()
-            else:
-                st.error("Senha incorreta")
-        else:
-            st.error("Usuário não encontrado")
-
-# ===============================
-# 🚀 SISTEMA
-# ===============================
+if df.empty:
+    st.warning("Nenhuma previsão cadastrada")
 else:
 
-    # ===============================
-    # SIDEBAR
-    # ===============================
-    st.sidebar.image("assets/logo_petiko.png", width=150)
+    st.dataframe(df, use_container_width=True)
 
-    st.sidebar.success(f"👤 {st.session_state.usuario}")
-    st.sidebar.write(f"🏢 {st.session_state.departamento}")
-    st.sidebar.write(f"📧 {st.session_state.email}")
+    col1, col2 = st.columns(2)
 
-    if st.sidebar.button("Sair"):
-        st.session_state.clear()
-        st.rerun()
+    col1.metric("Total de Registros", len(df))
 
-    # ===============================
-    # TÍTULO
-    # ===============================
-    st.markdown(
-        "<h4 style='margin-top:-10px; color: gray;'>📦 Sistema Logístico</h4>",
-        unsafe_allow_html=True
-    )
+    # 🔥 DATA REAL DA PLANILHA
+    if "data_atualizacao" in df.columns:
+        try:
+            ultima_atualizacao = df["data_atualizacao"].dropna().iloc[-1]
+        except:
+            ultima_atualizacao = "-"
+    else:
+        ultima_atualizacao = "Não informado"
 
-    # ===============================
-    # MENU
-    # ===============================
-    st.sidebar.divider()
-    st.sidebar.subheader("📂 Menu")
-
-    menu_principal = st.sidebar.radio(
-        "Selecione o módulo:",
-        ["Atendimento & Logística", "Estoque"]
-    )
-
-    if menu_principal == "Atendimento & Logística":
-        pagina = st.sidebar.radio(
-            "Páginas:",
-            [
-                "Endereço - Solicitar",
-                "Endereço - Resolver",
-                "Bloqueio - Solicitar",
-                "Bloqueio - Resolver",
-                "Previsão de Postagem"
-            ]
-        )
-
-    elif menu_principal == "Estoque":
-        pagina = st.sidebar.radio(
-            "Páginas:",
-            [
-                "Cadastro de Produtos",
-                "Baixa de Estoque",
-                "Planejamento Operacional",
-                "Contador de Itens"
-            ]
-        )
-
-    # ===============================
-    # NAVEGAÇÃO
-    # ===============================
-    try:
-
-        if pagina == "Endereço - Solicitar":
-            exec(open("_pages/endereco_solicitar.py").read())
-
-        elif pagina == "Endereço - Resolver":
-            exec(open("_pages/endereco_resolver.py").read())
-
-        elif pagina == "Bloqueio - Solicitar":
-            exec(open("_pages/solicitar.py").read())
-
-        elif pagina == "Bloqueio - Resolver":
-            exec(open("_pages/resolver.py").read())
-
-        elif pagina == "Cadastro de Produtos":
-            exec(open("_pages/cadastro_produtos.py").read())
-
-        elif pagina == "Baixa de Estoque":
-            exec(open("_pages/baixa_estoque.py").read())
-
-        elif pagina == "Planejamento Operacional":
-            exec(open("_pages/planejamento.py").read())
-
-        elif pagina == "Contador de Itens":
-            exec(open("_pages/contador_itens.py").read())
-
-        elif pagina == "Previsão de Postagem":
-            exec(open("_pages/previsao_postagem.py").read())
-
-    except Exception as e:
-        st.error(f"Erro ao carregar página: {e}")
+    col2.metric("Última Atualização", ultima_atualizacao)
