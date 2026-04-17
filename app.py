@@ -10,25 +10,32 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS AJUSTADO
+# 🎨 CSS FINAL (REMOVE FAIXA + AJUSTA TOPO)
 # ===============================
 st.markdown("""
 <style>
+
+/* 🔥 REMOVE HEADER DO STREAMLIT */
+header {
+    visibility: hidden;
+}
+
+/* 🔥 REMOVE ESPAÇO SUPERIOR */
 .block-container {
-    padding-top: 10px !important;
+    padding-top: 20px !important;
 }
-img {
-    max-width: 100%;
-    height: auto;
-}
+
 </style>
 """, unsafe_allow_html=True)
 
-# 🔥 LOGO (CORRIGIDA)
+# 🔥 ESPAÇAMENTO CONTROLADO
+st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+
+# 🔥 LOGO AJUSTADA
 st.image("assets/logo_petiko.png", width=220)
 
 # ===============================
-# 🔗 CONEXÃO
+# 🔗 CONEXÃO (OTIMIZADA)
 # ===============================
 @st.cache_resource
 def conectar_google():
