@@ -50,7 +50,7 @@ st.info("""
 📢 **Importante:**
 - A previsão refere-se ao envio do pedido
 - O prazo de entrega começa após a postagem
-- Em caso de atraso (🔴), acionar o time de logística
+- Atualização semanalmente
 """)
 
 # ===============================
