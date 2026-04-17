@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 # 🔒 LOGIN
 if "logado" not in st.session_state or not st.session_state.logado:
@@ -27,7 +28,7 @@ client = gspread.authorize(credentials)
 spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
 
 # ===============================
-# 📊 CARREGAR DADOS
+# 📊 DADOS
 # ===============================
 try:
     sheet = spreadsheet.worksheet("previsao_postagem")
@@ -44,24 +45,77 @@ if not df.empty:
     df.columns = df.columns.str.strip().str.lower()
 
 # ===============================
-# 📊 VISUAL
+# 📢 AVISO PARA ATENDIMENTO
 # ===============================
-st.subheader("📊 Planejamento de Expedição")
+st.info("""
+📢 **Importante:**
+- A previsão refere-se ao envio do pedido
+- O prazo de entrega começa após a postagem
+- Em caso de atraso (🔴), acionar o time de logística
+""")
 
+# ===============================
+# 📅 DATA DE ATUALIZAÇÃO
+# ===============================
+if "data_atualizacao" in df.columns:
+    try:
+        ultima_atualizacao = df["data_atualizacao"].dropna().iloc[-1]
+    except:
+        ultima_atualizacao = "-"
+else:
+    ultima_atualizacao = "Não informado"
+
+st.success(f"📅 Última atualização: {ultima_atualizacao}")
+
+# ===============================
+# 🔄 RENOMEAR COLUNAS (LINGUAGEM SIMPLES)
+# ===============================
+df = df.rename(columns={
+    "data_impressao": "Data do Pedido",
+    "previsao_expedicao": "Previsão de Envio"
+})
+
+# ===============================
+# 🔎 BUSCA
+# ===============================
+busca = st.text_input("🔎 Buscar por data do pedido")
+
+if busca:
+    df = df[df["Data do Pedido"].astype(str).str.contains(busca)]
+
+# ===============================
+# 🔴 STATUS
+# ===============================
+def status(row):
+    try:
+        hoje = datetime.now().date()
+        previsao = datetime.strptime(row["Previsão de Envio"], "%d/%m/%Y").date()
+
+        if previsao < hoje:
+            return "🔴 Atrasado"
+        elif previsao == hoje:
+            return "🟡 Envia hoje"
+        else:
+            return "🟢 Dentro do prazo"
+    except:
+        return "-"
+
+if not df.empty:
+    df["Status"] = df.apply(status, axis=1)
+
+# ===============================
+# 📊 ORDENAÇÃO
+# ===============================
+if "Previsão de Envio" in df.columns:
+    try:
+        df = df.sort_values(by="Previsão de Envio")
+    except:
+        pass
+
+# ===============================
+# 📊 TABELA FINAL
+# ===============================
 if df.empty:
     st.warning("Nenhuma previsão cadastrada")
 else:
-
     st.dataframe(df, use_container_width=True)
-
-    # 📈 Métricas
-    col1, col2 = st.columns(2)
-
-    col1.metric("Total de Registros", len(df))
-
-    try:
-        ultima_data = df["data_impressao"].iloc[-1]
-    except:
-        ultima_data = "-"
-
-    col2.metric("Última Data de Impressão", ultima_data)
