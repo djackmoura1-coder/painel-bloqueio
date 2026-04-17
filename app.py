@@ -50,7 +50,7 @@ except:
     st.stop()
 
 # ===============================
-# 👤 USUÁRIOS (SEM CACHE PRA NÃO DAR CONFLITO)
+# 👤 USUÁRIOS
 # ===============================
 try:
     sheet_users = spreadsheet.worksheet("usuarios")
@@ -158,7 +158,8 @@ else:
                 "Endereço - Solicitar",
                 "Endereço - Resolver",
                 "Bloqueio - Solicitar",
-                "Bloqueio - Resolver"
+                "Bloqueio - Resolver",
+                "Previsão de Postagem"
             ]
         )
 
@@ -201,6 +202,9 @@ else:
 
         elif pagina == "Contador de Itens":
             exec(open("_pages/contador_itens.py").read())
+
+        elif pagina == "Previsão de Postagem":
+            exec(open("_pages/previsao_postagem.py").read())
 
     except Exception as e:
         st.error(f"Erro ao carregar página: {e}")
