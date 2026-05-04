@@ -62,8 +62,6 @@ df.columns = (
 )
 
 df["status"] = df["status"].astype(str).str.strip().str.lower()
-
-# 🔥 CORREÇÃO CRÍTICA AQUI
 df["resultado"] = df["resultado"].astype(str).str.strip().str.lower()
 df["resultado"] = df["resultado"].replace(["", "nan", "none"], "pendente")
 
@@ -73,14 +71,16 @@ df["resultado"] = df["resultado"].replace(["", "nan", "none"], "pendente")
 pendentes = len(df[df["status"] == "pendente"])
 tratativa = len(df[df["status"] == "em tratativa"])
 resolvidos = len(df[df["status"] == "finalizado"])
+cancelados = len(df[df["status"] == "cancelado"])
 
 st.subheader("📊 Status dos Pedidos")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("🟡 Pendentes", pendentes)
 col2.metric("🟠 Em tratativa", tratativa)
 col3.metric("🟢 Resolvidos", resolvidos)
+col4.metric("⚫ Cancelados", cancelados)
 
 st.divider()
 
@@ -114,6 +114,21 @@ if not pendentes_df.empty:
         "Selecionar rastreio",
         pendentes_df["rastreio"]
     )
+
+    # 🔎 STATUS ATUAL
+    status_atual = df.loc[df["rastreio"] == rastreio, "status"].values[0]
+
+    # ❌ CANCELAR
+    if status_atual == "pendente":
+        if st.button("❌ Cancelar solicitação"):
+
+            df.loc[df["rastreio"] == rastreio, "status"] = "cancelado"
+            df.loc[df["rastreio"] == rastreio, "resultado"] = "cancelado"
+
+            sheet.update([df.columns.tolist()] + df.values.tolist())
+
+            st.success("🚫 Solicitação cancelada com sucesso!")
+            st.rerun()
 
     acao = st.radio(
         "Resultado",
@@ -198,6 +213,8 @@ def resultado_formatado(resultado):
         return "Pendente 🟡"
     elif resultado == "em tratativa":
         return "Em tratativa 🟠"
+    elif resultado == "cancelado":
+        return "Cancelado ⚫"
     else:
         return resultado
 
