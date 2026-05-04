@@ -115,20 +115,46 @@ if not pendentes_df.empty:
         pendentes_df["rastreio"]
     )
 
+    # 🔁 CONTROLE DE CONFIRMAÇÃO
+    if "confirmar_cancelamento" not in st.session_state:
+        st.session_state.confirmar_cancelamento = False
+
+    if "ultimo_rastreio" not in st.session_state:
+        st.session_state.ultimo_rastreio = ""
+
+    if st.session_state.ultimo_rastreio != rastreio:
+        st.session_state.confirmar_cancelamento = False
+        st.session_state.ultimo_rastreio = rastreio
+
     # 🔎 STATUS ATUAL
     status_atual = df.loc[df["rastreio"] == rastreio, "status"].values[0]
 
-    # ❌ CANCELAR
+    # ❌ CANCELAR COM CONFIRMAÇÃO
     if status_atual == "pendente":
-        if st.button("❌ Cancelar solicitação"):
 
-            df.loc[df["rastreio"] == rastreio, "status"] = "cancelado"
-            df.loc[df["rastreio"] == rastreio, "resultado"] = "cancelado"
+        if not st.session_state.confirmar_cancelamento:
+            if st.button("❌ Cancelar solicitação"):
+                st.session_state.confirmar_cancelamento = True
+                st.warning("⚠️ Tem certeza que deseja cancelar esta solicitação?")
 
-            sheet.update([df.columns.tolist()] + df.values.tolist())
+        else:
+            col1, col2 = st.columns(2)
 
-            st.success("🚫 Solicitação cancelada com sucesso!")
-            st.rerun()
+            with col1:
+                if st.button("✅ Sim, cancelar"):
+                    df.loc[df["rastreio"] == rastreio, "status"] = "cancelado"
+                    df.loc[df["rastreio"] == rastreio, "resultado"] = "cancelado"
+
+                    sheet.update([df.columns.tolist()] + df.values.tolist())
+
+                    st.success("🚫 Solicitação cancelada com sucesso!")
+                    st.session_state.confirmar_cancelamento = False
+                    st.rerun()
+
+            with col2:
+                if st.button("❌ Não, voltar"):
+                    st.session_state.confirmar_cancelamento = False
+                    st.info("Cancelamento abortado.")
 
     acao = st.radio(
         "Resultado",
