@@ -82,6 +82,23 @@ if not pendentes_df.empty:
         pendentes_df["Rastreio"]
     )
 
+    # 🔎 STATUS ATUAL
+    status_atual = df.loc[df["Rastreio"] == rastreio, "Status"].values[0]
+
+    # ❌ CANCELAR (somente se pendente)
+    if status_atual == "Pendente":
+        if st.button("❌ Cancelar solicitação"):
+
+            df.loc[df["Rastreio"] == rastreio, "Status"] = "Cancelado"
+            df.loc[df["Rastreio"] == rastreio, "Resultado"] = "Cancelado"
+
+            sheet.update(
+                [df.columns.values.tolist()] + df.values.tolist()
+            )
+
+            st.success("🚫 Solicitação cancelada com sucesso!")
+            st.rerun()
+
     acao = st.radio(
         "Ação da ocorrência",
         ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
@@ -170,6 +187,9 @@ def status_color(row):
 
     if row["Status"] == "Tratativa":
         return "🟠 Em tratativa logística"
+
+    if row["Status"] == "Cancelado":
+        return "⚫ Cancelado"
 
     if row["Resultado"] == "Bloqueado":
         return "🟢 Bloqueado"
