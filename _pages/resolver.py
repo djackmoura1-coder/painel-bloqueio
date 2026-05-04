@@ -55,13 +55,15 @@ pendentes_df = df[
 pendentes = len(pendentes_df)
 bloqueados = len(df[df["Resultado"] == "Bloqueado"])
 nao_bloqueados = len(df[df["Resultado"] == "Não bloqueado"])
+cancelados = len(df[df["Status"] == "Cancelado"])
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
-col1.metric("Total de ocorrências", total)
+col1.metric("Total", total)
 col2.metric("Pendentes 🟡", pendentes)
 col3.metric("Bloqueados 🟢", bloqueados)
 col4.metric("Não bloqueados 🔴", nao_bloqueados)
+col5.metric("Cancelados ⚫", cancelados)
 
 # 🔎 BUSCA
 st.subheader("🔎 Buscar ocorrência")
@@ -82,29 +84,54 @@ if not pendentes_df.empty:
         pendentes_df["Rastreio"]
     )
 
-    # 🔎 STATUS ATUAL
+    # 🔁 CONTROLE DE CONFIRMAÇÃO
+    if "confirmar_cancelamento_bloqueio" not in st.session_state:
+        st.session_state.confirmar_cancelamento_bloqueio = False
+
+    if "ultimo_rastreio_bloqueio" not in st.session_state:
+        st.session_state.ultimo_rastreio_bloqueio = ""
+
+    if st.session_state.ultimo_rastreio_bloqueio != rastreio:
+        st.session_state.confirmar_cancelamento_bloqueio = False
+        st.session_state.ultimo_rastreio_bloqueio = rastreio
+
+    # 🔎 STATUS
     status_atual = df.loc[df["Rastreio"] == rastreio, "Status"].values[0]
 
-    # ❌ CANCELAR (somente se pendente)
+    # ❌ CANCELAR COM CONFIRMAÇÃO
     if status_atual == "Pendente":
-        if st.button("❌ Cancelar solicitação"):
 
-            df.loc[df["Rastreio"] == rastreio, "Status"] = "Cancelado"
-            df.loc[df["Rastreio"] == rastreio, "Resultado"] = "Cancelado"
+        if not st.session_state.confirmar_cancelamento_bloqueio:
+            if st.button("❌ Cancelar solicitação"):
+                st.session_state.confirmar_cancelamento_bloqueio = True
+                st.warning("⚠️ Tem certeza que deseja cancelar esta solicitação?")
 
-            sheet.update(
-                [df.columns.values.tolist()] + df.values.tolist()
-            )
+        else:
+            col1, col2 = st.columns(2)
 
-            st.success("🚫 Solicitação cancelada com sucesso!")
-            st.rerun()
+            with col1:
+                if st.button("✅ Sim, cancelar"):
+                    df.loc[df["Rastreio"] == rastreio, "Status"] = "Cancelado"
+                    df.loc[df["Rastreio"] == rastreio, "Resultado"] = "Cancelado"
+
+                    sheet.update(
+                        [df.columns.values.tolist()] + df.values.tolist()
+                    )
+
+                    st.success("🚫 Solicitação cancelada com sucesso!")
+                    st.session_state.confirmar_cancelamento_bloqueio = False
+                    st.rerun()
+
+            with col2:
+                if st.button("❌ Não, voltar"):
+                    st.session_state.confirmar_cancelamento_bloqueio = False
+                    st.info("Cancelamento abortado.")
 
     acao = st.radio(
         "Ação da ocorrência",
         ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
     )
 
-    # 🔒 BLOQUEIO VISUAL
     if bloqueado_resolucao:
         st.warning("🚫 Você não tem permissão para resolver ocorrências.")
 
@@ -135,9 +162,7 @@ if not pendentes_df.empty:
                 [df.columns.values.tolist()] + df.values.tolist()
             )
 
-            # 📧 ENVIO DE EMAIL
             if email_cliente:
-
                 mensagem = f"""
 Olá,
 
@@ -147,7 +172,6 @@ Resultado: {acao}
 
 Sistema de Bloqueio de Pedidos
 """
-
                 msg = MIMEText(mensagem)
                 msg["Subject"] = "Resultado da solicitação de bloqueio"
                 msg["From"] = "djackmoura1@gmail.com"
@@ -165,12 +189,10 @@ Sistema de Bloqueio de Pedidos
                     servidor.quit()
 
                     st.success("✅ Ocorrência finalizada e email enviado!")
-
                 except:
-                    st.warning("Ocorrência finalizada, mas não foi possível enviar email.")
-
+                    st.warning("Finalizado, mas erro ao enviar email.")
             else:
-                st.success("Ocorrência finalizada! (sem email cadastrado)")
+                st.success("Ocorrência finalizada!")
 
             st.rerun()
 
