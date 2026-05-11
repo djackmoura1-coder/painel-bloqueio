@@ -37,8 +37,12 @@ sheet = client.open_by_key(
 dados = sheet.get_all_records()
 df = pd.DataFrame(dados)
 
+# 🔥 GARANTE COLUNAS
 if "Email" not in df.columns:
     df["Email"] = ""
+
+if "Resolvido Por" not in df.columns:
+    df["Resolvido Por"] = ""
 
 if df.empty:
     st.info("Nenhuma ocorrência registrada ainda.")
@@ -111,8 +115,10 @@ if not pendentes_df.empty:
 
             with col1:
                 if st.button("✅ Sim, cancelar"):
+
                     df.loc[df["Rastreio"] == rastreio, "Status"] = "Cancelado"
                     df.loc[df["Rastreio"] == rastreio, "Resultado"] = "Cancelado"
+                    df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("nome", "Desconhecido")
 
                     sheet.update(
                         [df.columns.values.tolist()] + df.values.tolist()
@@ -143,6 +149,7 @@ if not pendentes_df.empty:
 
             df.loc[df["Rastreio"] == rastreio, "Status"] = "Tratativa"
             df.loc[df["Rastreio"] == rastreio, "Resultado"] = ""
+            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("nome", "Desconhecido")
 
             sheet.update(
                 [df.columns.values.tolist()] + df.values.tolist()
@@ -155,6 +162,7 @@ if not pendentes_df.empty:
 
             df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
             df.loc[df["Rastreio"] == rastreio, "Resultado"] = acao
+            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("nome", "Desconhecido")
 
             email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
 
@@ -163,6 +171,7 @@ if not pendentes_df.empty:
             )
 
             if email_cliente:
+
                 mensagem = f"""
 Olá,
 
@@ -172,6 +181,7 @@ Resultado: {acao}
 
 Sistema de Bloqueio de Pedidos
 """
+
                 msg = MIMEText(mensagem)
                 msg["Subject"] = "Resultado da solicitação de bloqueio"
                 msg["From"] = "djackmoura1@gmail.com"
@@ -181,16 +191,20 @@ Sistema de Bloqueio de Pedidos
                     servidor = smtplib.SMTP("smtp.gmail.com", 587)
                     servidor.starttls()
                     servidor.login("djackmoura1@gmail.com", "xssw hyhl tjao eeyj")
+
                     servidor.sendmail(
                         "djackmoura1@gmail.com",
                         email_cliente,
                         msg.as_string()
                     )
+
                     servidor.quit()
 
                     st.success("✅ Ocorrência finalizada e email enviado!")
+
                 except:
                     st.warning("Finalizado, mas erro ao enviar email.")
+
             else:
                 st.success("Ocorrência finalizada!")
 
@@ -227,6 +241,7 @@ tabela = df[
     [
         "Data",
         "Responsavel",
+        "Resolvido Por",
         "Email",
         "ID Assinatura",
         "Rastreio",
