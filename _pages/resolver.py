@@ -118,7 +118,7 @@ if not pendentes_df.empty:
 
                     df.loc[df["Rastreio"] == rastreio, "Status"] = "Cancelado"
                     df.loc[df["Rastreio"] == rastreio, "Resultado"] = "Cancelado"
-                    df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("nome", "Desconhecido")
+                    df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("usuario", "Desconhecido")
 
                     sheet.update(
                         [df.columns.values.tolist()] + df.values.tolist()
@@ -149,7 +149,7 @@ if not pendentes_df.empty:
 
             df.loc[df["Rastreio"] == rastreio, "Status"] = "Tratativa"
             df.loc[df["Rastreio"] == rastreio, "Resultado"] = ""
-            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("nome", "Desconhecido")
+            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("usuario", "Desconhecido")
 
             sheet.update(
                 [df.columns.values.tolist()] + df.values.tolist()
@@ -162,7 +162,7 @@ if not pendentes_df.empty:
 
             df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
             df.loc[df["Rastreio"] == rastreio, "Resultado"] = acao
-            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("nome", "Desconhecido")
+            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("usuario", "Desconhecido")
 
             email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
 
