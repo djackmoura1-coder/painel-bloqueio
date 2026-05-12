@@ -57,7 +57,11 @@ with col_reset2:
 
             sheet_produtos.clear()
             sheet_produtos.append_row([
-                "produto","trilha","quantidade_inicial","quantidade_total","quantidade_base"
+                "produto",
+                "trilha",
+                "quantidade_inicial",
+                "quantidade_total",
+                "quantidade_base"
             ])
 
             st.success("Sistema resetado!")
@@ -84,7 +88,7 @@ def to_int(valor):
         return 0
 
 # ===============================
-# 🚨 ALERTA GERAL (200)
+# 🚨 ALERTA GERAL
 # ===============================
 itens_criticos = df[df["quantidade_inicial"].apply(to_int) <= 200]
 
@@ -98,15 +102,16 @@ produto = st.selectbox("Selecione o produto", df["produto"])
 
 linha = df[df["produto"] == produto].iloc[0]
 
+# 🔥 CONCEITOS
 estoque_atual = to_int(linha.get("quantidade_inicial", 0))
 quantidade_total = to_int(linha.get("quantidade_total", 0))
 quantidade_base = to_int(linha.get("quantidade_base", 0))
 
 # 🚨 ALERTA INDIVIDUAL
 if estoque_atual <= 200:
-    st.warning(f"⚠️ Estoque baixo: {estoque_atual} unidades")
+    st.warning(f"⚠️ Estoque baixo: {estoque_atual} unidades disponíveis")
 else:
-    st.info(f"📦 Estoque atual: {estoque_atual}")
+    st.info(f"📦 Saldo disponível: {estoque_atual} unidades")
 
 # ===============================
 # 📊 CONSUMO
@@ -115,6 +120,7 @@ dados_log = sheet_log.get_all_records()
 df_log = pd.DataFrame(dados_log)
 
 if not df_log.empty:
+
     df_log.columns = df_log.columns.str.strip().str.lower()
 
     df_log = df_log[
@@ -122,14 +128,13 @@ if not df_log.empty:
         (df_log["tipo"] == "baixa")
     ]
 
-    consumido = df_log["quantidade"].apply(to_int).sum() if not df_log.empty else 0
+    consumido = (
+        df_log["quantidade"].apply(to_int).sum()
+        if not df_log.empty else 0
+    )
+
 else:
     consumido = 0
-
-# ===============================
-# 📊 RESTANTE
-# ===============================
-percentual_restante = (estoque_atual / quantidade_total * 100) if quantidade_total > 0 else 0
 
 # ===============================
 # 🎯 DASH
@@ -138,17 +143,21 @@ st.subheader("📊 Controle")
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Estoque", estoque_atual)
-col2.metric("Total", quantidade_total)
-col3.metric("Consumido", consumido)
-col4.metric("Restante (%)", f"{percentual_restante:.1f}%")
+col1.metric("📦 Saldo Atual", estoque_atual)
+col2.metric("📥 Quantidade Total", quantidade_total)
+col3.metric("🏁 Quantidade Base", quantidade_base)
+col4.metric("📤 Consumido", consumido)
 
 st.divider()
 
 # ===============================
 # 🔢 INPUT
 # ===============================
-quantidade = st.number_input("Quantidade", min_value=1, disabled=not pode_editar)
+quantidade = st.number_input(
+    "Quantidade",
+    min_value=1,
+    disabled=not pode_editar
+)
 
 col_a, col_b = st.columns(2)
 
@@ -156,15 +165,21 @@ col_a, col_b = st.columns(2)
 # ➕ ENTRADA
 # ===============================
 with col_a:
+
     if st.button("➕ Entrada", disabled=not pode_editar):
 
+        # 🔥 SALDO DISPONÍVEL
         nova_qtd = estoque_atual + quantidade
+
+        # 🔥 TOTAL ACUMULADO
         novo_total = quantidade_total + quantidade
 
         df.loc[df["produto"] == produto, "quantidade_inicial"] = nova_qtd
         df.loc[df["produto"] == produto, "quantidade_total"] = novo_total
 
-        sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
+        sheet_produtos.update(
+            [df.columns.tolist()] + df.values.tolist()
+        )
 
         sheet_log.append_row([
             str(datetime.now()),
@@ -175,22 +190,30 @@ with col_a:
             nova_qtd
         ])
 
+        st.success("Entrada realizada com sucesso!")
         st.rerun()
 
 # ===============================
 # ➖ BAIXA
 # ===============================
 with col_b:
+
     if st.button("➖ Baixa", disabled=not pode_editar):
 
         if quantidade > estoque_atual:
+
             st.error("Quantidade maior que o estoque")
+
         else:
+
+            # 🔥 REDUZ SOMENTE O SALDO
             nova_qtd = estoque_atual - quantidade
 
             df.loc[df["produto"] == produto, "quantidade_inicial"] = nova_qtd
 
-            sheet_produtos.update([df.columns.tolist()] + df.values.tolist())
+            sheet_produtos.update(
+                [df.columns.tolist()] + df.values.tolist()
+            )
 
             sheet_log.append_row([
                 str(datetime.now()),
@@ -205,13 +228,15 @@ with col_b:
             st.rerun()
 
 # ===============================
-# 📊 TABELA COM DESTAQUE AMARELO
+# 📊 TABELA
 # ===============================
 st.subheader("📊 Visão Geral do Estoque")
 
 def destacar_estoque(row):
+
     if to_int(row["quantidade_inicial"]) <= 200:
         return ["background-color: yellow; color: black"] * len(row)
+
     return [""] * len(row)
 
 st.dataframe(
