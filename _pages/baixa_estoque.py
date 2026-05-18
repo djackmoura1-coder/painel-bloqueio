@@ -33,7 +33,9 @@ credentials = Credentials.from_service_account_info(
 
 client = gspread.authorize(credentials)
 
-spreadsheet = client.open_by_key("1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao")
+spreadsheet = client.open_by_key(
+    "1IGKJfifqmCdyptPT7INeSjjkW9VnfbQhc4yjKKfwyao"
+)
 
 sheet_produtos = spreadsheet.worksheet("produtos")
 sheet_log = spreadsheet.worksheet("movimentacoes")
@@ -44,18 +46,33 @@ sheet_log = spreadsheet.worksheet("movimentacoes")
 st.divider()
 st.subheader("⚠️ Reset Completo da Operação")
 
-col_reset1, col_reset2 = st.columns([2,1])
+col_reset1, col_reset2 = st.columns([2, 1])
 
 with col_reset2:
-    if st.button("🗑️ RESET TOTAL", use_container_width=True, disabled=not pode_editar):
+
+    if st.button(
+        "🗑️ RESET TOTAL",
+        use_container_width=True,
+        disabled=not pode_editar
+    ):
 
         confirmar = st.checkbox("Confirmar exclusão TOTAL")
 
         if confirmar:
+
             sheet_log.clear()
-            sheet_log.append_row(["data","usuario","produto","tipo","quantidade","estoque_final"])
+
+            sheet_log.append_row([
+                "data",
+                "usuario",
+                "produto",
+                "tipo",
+                "quantidade",
+                "estoque_final"
+            ])
 
             sheet_produtos.clear()
+
             sheet_produtos.append_row([
                 "produto",
                 "trilha",
@@ -65,6 +82,8 @@ with col_reset2:
             ])
 
             st.success("Sistema resetado!")
+
+            st.cache_data.clear()
             st.rerun()
 
 st.divider()
@@ -72,8 +91,12 @@ st.divider()
 # ===============================
 # 📊 DADOS
 # ===============================
-dados = sheet_produtos.get_all_records()
-df = pd.DataFrame(dados)
+@st.cache_data(ttl=60)
+def carregar_produtos():
+    dados = sheet_produtos.get_all_records()
+    return pd.DataFrame(dados)
+
+df = carregar_produtos()
 
 if df.empty:
     st.warning("Nenhum produto cadastrado.")
@@ -81,6 +104,9 @@ if df.empty:
 
 df.columns = df.columns.str.strip().str.lower()
 
+# ===============================
+# 🔧 FUNÇÃO
+# ===============================
 def to_int(valor):
     try:
         return int(float(valor))
@@ -90,38 +116,65 @@ def to_int(valor):
 # ===============================
 # 🚨 ALERTA GERAL
 # ===============================
-itens_criticos = df[df["quantidade_inicial"].apply(to_int) <= 200]
+itens_criticos = df[
+    df["quantidade_inicial"].apply(to_int) <= 200
+]
 
 if not itens_criticos.empty:
-    st.warning(f"⚠️ {len(itens_criticos)} itens com estoque baixo (≤ 200 unidades)")
+    st.warning(
+        f"⚠️ {len(itens_criticos)} itens com estoque baixo (≤ 200 unidades)"
+    )
 
 # ===============================
 # 🔍 PRODUTO
 # ===============================
-produto = st.selectbox("Selecione o produto", df["produto"])
+produto = st.selectbox(
+    "Selecione o produto",
+    df["produto"]
+)
 
 linha = df[df["produto"] == produto].iloc[0]
 
 # 🔥 CONCEITOS
-estoque_atual = to_int(linha.get("quantidade_inicial", 0))
-quantidade_total = to_int(linha.get("quantidade_total", 0))
-quantidade_base = to_int(linha.get("quantidade_base", 0))
+estoque_atual = to_int(
+    linha.get("quantidade_inicial", 0)
+)
+
+quantidade_total = to_int(
+    linha.get("quantidade_total", 0)
+)
+
+quantidade_base = to_int(
+    linha.get("quantidade_base", 0)
+)
 
 # 🚨 ALERTA INDIVIDUAL
 if estoque_atual <= 200:
-    st.warning(f"⚠️ Estoque baixo: {estoque_atual} unidades disponíveis")
+    st.warning(
+        f"⚠️ Estoque baixo: {estoque_atual} unidades disponíveis"
+    )
 else:
-    st.info(f"📦 Saldo disponível: {estoque_atual} unidades")
+    st.info(
+        f"📦 Saldo disponível: {estoque_atual} unidades"
+    )
 
 # ===============================
 # 📊 CONSUMO
 # ===============================
-dados_log = sheet_log.get_all_records()
-df_log = pd.DataFrame(dados_log)
+@st.cache_data(ttl=60)
+def carregar_movimentacoes():
+    dados_log = sheet_log.get_all_records()
+    return pd.DataFrame(dados_log)
+
+df_log = carregar_movimentacoes()
 
 if not df_log.empty:
 
-    df_log.columns = df_log.columns.str.strip().str.lower()
+    df_log.columns = (
+        df_log.columns
+        .str.strip()
+        .str.lower()
+    )
 
     df_log = df_log[
         (df_log["produto"] == produto) &
@@ -129,7 +182,9 @@ if not df_log.empty:
     ]
 
     consumido = (
-        df_log["quantidade"].apply(to_int).sum()
+        df_log["quantidade"]
+        .apply(to_int)
+        .sum()
         if not df_log.empty else 0
     )
 
@@ -166,7 +221,10 @@ col_a, col_b = st.columns(2)
 # ===============================
 with col_a:
 
-    if st.button("➕ Entrada", disabled=not pode_editar):
+    if st.button(
+        "➕ Entrada",
+        disabled=not pode_editar
+    ):
 
         # 🔥 SALDO DISPONÍVEL
         nova_qtd = estoque_atual + quantidade
@@ -174,8 +232,15 @@ with col_a:
         # 🔥 TOTAL ACUMULADO
         novo_total = quantidade_total + quantidade
 
-        df.loc[df["produto"] == produto, "quantidade_inicial"] = nova_qtd
-        df.loc[df["produto"] == produto, "quantidade_total"] = novo_total
+        df.loc[
+            df["produto"] == produto,
+            "quantidade_inicial"
+        ] = nova_qtd
+
+        df.loc[
+            df["produto"] == produto,
+            "quantidade_total"
+        ] = novo_total
 
         sheet_produtos.update(
             [df.columns.tolist()] + df.values.tolist()
@@ -191,6 +256,8 @@ with col_a:
         ])
 
         st.success("Entrada realizada com sucesso!")
+
+        st.cache_data.clear()
         st.rerun()
 
 # ===============================
@@ -198,18 +265,26 @@ with col_a:
 # ===============================
 with col_b:
 
-    if st.button("➖ Baixa", disabled=not pode_editar):
+    if st.button(
+        "➖ Baixa",
+        disabled=not pode_editar
+    ):
 
         if quantidade > estoque_atual:
 
-            st.error("Quantidade maior que o estoque")
+            st.error(
+                "Quantidade maior que o estoque"
+            )
 
         else:
 
             # 🔥 REDUZ SOMENTE O SALDO
             nova_qtd = estoque_atual - quantidade
 
-            df.loc[df["produto"] == produto, "quantidade_inicial"] = nova_qtd
+            df.loc[
+                df["produto"] == produto,
+                "quantidade_inicial"
+            ] = nova_qtd
 
             sheet_produtos.update(
                 [df.columns.tolist()] + df.values.tolist()
@@ -224,7 +299,11 @@ with col_b:
                 nova_qtd
             ])
 
-            st.success("Baixa realizada com sucesso!")
+            st.success(
+                "Baixa realizada com sucesso!"
+            )
+
+            st.cache_data.clear()
             st.rerun()
 
 # ===============================
@@ -235,7 +314,9 @@ st.subheader("📊 Visão Geral do Estoque")
 def destacar_estoque(row):
 
     if to_int(row["quantidade_inicial"]) <= 200:
-        return ["background-color: yellow; color: black"] * len(row)
+        return [
+            "background-color: yellow; color: black"
+        ] * len(row)
 
     return [""] * len(row)
 
