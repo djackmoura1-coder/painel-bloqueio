@@ -4,7 +4,9 @@ from email.mime.text import MIMEText
 import streamlit as st
 import pandas as pd
 import gspread
+
 from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 # 🔒 BLOQUEIO DE LOGIN
 if "logado" not in st.session_state or not st.session_state.logado:
@@ -14,7 +16,10 @@ if "logado" not in st.session_state or not st.session_state.logado:
 st.title("🔧 Resolver Solicitações de Bloqueio")
 
 # 🔒 CONTROLE DE PERMISSÃO
-bloqueado_resolucao = st.session_state.get("departamento", "").lower() == "atendimento"
+bloqueado_resolucao = (
+    st.session_state.get("departamento", "").lower()
+    == "atendimento"
+)
 
 # 🔗 CONEXÃO GOOGLE
 scope = [
@@ -43,6 +48,9 @@ if "Email" not in df.columns:
 
 if "Resolvido Por" not in df.columns:
     df["Resolvido Por"] = ""
+
+if "Historico" not in df.columns:
+    df["Historico"] = ""
 
 if df.empty:
     st.info("Nenhuma ocorrência registrada ainda.")
@@ -75,8 +83,14 @@ st.subheader("🔎 Buscar ocorrência")
 busca = st.text_input("Buscar pelo rastreio")
 
 if busca:
-    resultado_busca = df[df["Rastreio"].astype(str).str.contains(busca)]
-    st.dataframe(resultado_busca, use_container_width=True)
+    resultado_busca = df[
+        df["Rastreio"].astype(str).str.contains(busca)
+    ]
+
+    st.dataframe(
+        resultado_busca,
+        use_container_width=True
+    )
 
 # 🔧 RESOLVER
 st.subheader("Resolver ocorrência")
@@ -95,76 +109,196 @@ if not pendentes_df.empty:
     if "ultimo_rastreio_bloqueio" not in st.session_state:
         st.session_state.ultimo_rastreio_bloqueio = ""
 
-    if st.session_state.ultimo_rastreio_bloqueio != rastreio:
+    if (
+        st.session_state.ultimo_rastreio_bloqueio
+        != rastreio
+    ):
         st.session_state.confirmar_cancelamento_bloqueio = False
         st.session_state.ultimo_rastreio_bloqueio = rastreio
 
     # 🔎 STATUS
-    status_atual = df.loc[df["Rastreio"] == rastreio, "Status"].values[0]
+    status_atual = df.loc[
+        df["Rastreio"] == rastreio,
+        "Status"
+    ].values[0]
 
     # ❌ CANCELAR COM CONFIRMAÇÃO
     if status_atual == "Pendente":
 
         if not st.session_state.confirmar_cancelamento_bloqueio:
+
             if st.button("❌ Cancelar solicitação"):
+
                 st.session_state.confirmar_cancelamento_bloqueio = True
-                st.warning("⚠️ Tem certeza que deseja cancelar esta solicitação?")
+
+                st.warning(
+                    "⚠️ Tem certeza que deseja cancelar esta solicitação?"
+                )
 
         else:
+
             col1, col2 = st.columns(2)
 
             with col1:
+
                 if st.button("✅ Sim, cancelar"):
 
-                    df.loc[df["Rastreio"] == rastreio, "Status"] = "Cancelado"
-                    df.loc[df["Rastreio"] == rastreio, "Resultado"] = "Cancelado"
-                    df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("usuario", "Desconhecido")
+                    usuario = st.session_state.get(
+                        "usuario",
+                        "Desconhecido"
+                    )
+
+                    historico_atual = df.loc[
+                        df["Rastreio"] == rastreio,
+                        "Historico"
+                    ].values[0]
+
+                    novo_historico = f"""
+{historico_atual}
+{datetime.now().strftime('%d/%m/%Y %H:%M')} - {usuario} → Cancelado
+"""
+
+                    df.loc[
+                        df["Rastreio"] == rastreio,
+                        "Status"
+                    ] = "Cancelado"
+
+                    df.loc[
+                        df["Rastreio"] == rastreio,
+                        "Resultado"
+                    ] = "Cancelado"
+
+                    df.loc[
+                        df["Rastreio"] == rastreio,
+                        "Resolvido Por"
+                    ] = usuario
+
+                    df.loc[
+                        df["Rastreio"] == rastreio,
+                        "Historico"
+                    ] = novo_historico
 
                     sheet.update(
                         [df.columns.values.tolist()] + df.values.tolist()
                     )
 
-                    st.success("🚫 Solicitação cancelada com sucesso!")
+                    st.success(
+                        "🚫 Solicitação cancelada com sucesso!"
+                    )
+
                     st.session_state.confirmar_cancelamento_bloqueio = False
+
                     st.rerun()
 
             with col2:
+
                 if st.button("❌ Não, voltar"):
+
                     st.session_state.confirmar_cancelamento_bloqueio = False
+
                     st.info("Cancelamento abortado.")
 
     acao = st.radio(
         "Ação da ocorrência",
-        ["Bloqueado", "Não bloqueado", "Tratativa com a logística"]
+        [
+            "Bloqueado",
+            "Não bloqueado",
+            "Tratativa com a logística"
+        ]
     )
 
     if bloqueado_resolucao:
-        st.warning("🚫 Você não tem permissão para resolver ocorrências.")
+        st.warning(
+            "🚫 Você não tem permissão para resolver ocorrências."
+        )
 
-    botao = st.button("Finalizar ocorrência", disabled=bloqueado_resolucao)
+    botao = st.button(
+        "Finalizar ocorrência",
+        disabled=bloqueado_resolucao
+    )
 
     if botao and not bloqueado_resolucao:
 
+        usuario = st.session_state.get(
+            "usuario",
+            "Desconhecido"
+        )
+
+        historico_atual = df.loc[
+            df["Rastreio"] == rastreio,
+            "Historico"
+        ].values[0]
+
+        # 🔶 TRATATIVA
         if acao == "Tratativa com a logística":
 
-            df.loc[df["Rastreio"] == rastreio, "Status"] = "Tratativa"
-            df.loc[df["Rastreio"] == rastreio, "Resultado"] = ""
-            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("usuario", "Desconhecido")
+            novo_historico = f"""
+{historico_atual}
+{datetime.now().strftime('%d/%m/%Y %H:%M')} - {usuario} → Tratativa com a logística
+"""
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Status"
+            ] = "Tratativa"
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Resultado"
+            ] = ""
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Resolvido Por"
+            ] = usuario
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Historico"
+            ] = novo_historico
 
             sheet.update(
                 [df.columns.values.tolist()] + df.values.tolist()
             )
 
-            st.warning("⚠️ Ocorrência enviada para tratativa logística")
+            st.warning(
+                "⚠️ Ocorrência enviada para tratativa logística"
+            )
+
             st.rerun()
 
+        # ✅ FINALIZAÇÃO
         else:
 
-            df.loc[df["Rastreio"] == rastreio, "Status"] = "Finalizado"
-            df.loc[df["Rastreio"] == rastreio, "Resultado"] = acao
-            df.loc[df["Rastreio"] == rastreio, "Resolvido Por"] = st.session_state.get("usuario", "Desconhecido")
+            novo_historico = f"""
+{historico_atual}
+{datetime.now().strftime('%d/%m/%Y %H:%M')} - {usuario} → {acao}
+"""
 
-            email_cliente = df.loc[df["Rastreio"] == rastreio, "Email"].values[0]
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Status"
+            ] = "Finalizado"
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Resultado"
+            ] = acao
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Resolvido Por"
+            ] = usuario
+
+            df.loc[
+                df["Rastreio"] == rastreio,
+                "Historico"
+            ] = novo_historico
+
+            email_cliente = df.loc[
+                df["Rastreio"] == rastreio,
+                "Email"
+            ].values[0]
 
             sheet.update(
                 [df.columns.values.tolist()] + df.values.tolist()
@@ -183,14 +317,27 @@ Sistema de Bloqueio de Pedidos
 """
 
                 msg = MIMEText(mensagem)
-                msg["Subject"] = "Resultado da solicitação de bloqueio"
+
+                msg["Subject"] = (
+                    "Resultado da solicitação de bloqueio"
+                )
+
                 msg["From"] = "djackmoura1@gmail.com"
                 msg["To"] = email_cliente
 
                 try:
-                    servidor = smtplib.SMTP("smtp.gmail.com", 587)
+
+                    servidor = smtplib.SMTP(
+                        "smtp.gmail.com",
+                        587
+                    )
+
                     servidor.starttls()
-                    servidor.login("djackmoura1@gmail.com", "xssw hyhl tjao eeyj")
+
+                    servidor.login(
+                        "djackmoura1@gmail.com",
+                        "xssw hyhl tjao eeyj"
+                    )
 
                     servidor.sendmail(
                         "djackmoura1@gmail.com",
@@ -200,10 +347,14 @@ Sistema de Bloqueio de Pedidos
 
                     servidor.quit()
 
-                    st.success("✅ Ocorrência finalizada e email enviado!")
+                    st.success(
+                        "✅ Ocorrência finalizada e email enviado!"
+                    )
 
                 except:
-                    st.warning("Finalizado, mas erro ao enviar email.")
+                    st.warning(
+                        "Finalizado, mas erro ao enviar email."
+                    )
 
             else:
                 st.success("Ocorrência finalizada!")
@@ -235,7 +386,10 @@ def status_color(row):
 
     return ""
 
-df["Status Visual"] = df.apply(status_color, axis=1)
+df["Status Visual"] = df.apply(
+    status_color,
+    axis=1
+)
 
 tabela = df[
     [
@@ -246,7 +400,8 @@ tabela = df[
         "ID Assinatura",
         "Rastreio",
         "Motivo",
-        "Status Visual"
+        "Status Visual",
+        "Historico"
     ]
 ]
 
