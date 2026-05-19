@@ -135,6 +135,11 @@ produto = st.selectbox(
 
 linha = df[df["produto"] == produto].iloc[0]
 
+# 🔥 LINHA DA PLANILHA
+linha_planilha = (
+    df[df["produto"] == produto].index[0] + 2
+)
+
 # 🔥 CONCEITOS
 estoque_atual = to_int(
     linha.get("quantidade_inicial", 0)
@@ -163,8 +168,16 @@ else:
 # ===============================
 @st.cache_data(ttl=60)
 def carregar_movimentacoes():
-    dados_log = sheet_log.get_all_records()
-    return pd.DataFrame(dados_log)
+
+    dados_log = sheet_log.get_values("A:F")
+
+    if len(dados_log) <= 1:
+        return pd.DataFrame()
+
+    return pd.DataFrame(
+        dados_log[1:],
+        columns=dados_log[0]
+    )
 
 df_log = carregar_movimentacoes()
 
@@ -226,26 +239,23 @@ with col_a:
         disabled=not pode_editar
     ):
 
-        # 🔥 SALDO DISPONÍVEL
         nova_qtd = estoque_atual + quantidade
-
-        # 🔥 TOTAL ACUMULADO
         novo_total = quantidade_total + quantidade
 
-        df.loc[
-            df["produto"] == produto,
-            "quantidade_inicial"
-        ] = nova_qtd
-
-        df.loc[
-            df["produto"] == produto,
-            "quantidade_total"
-        ] = novo_total
-
-        sheet_produtos.update(
-            [df.columns.tolist()] + df.values.tolist()
+        # 🔥 ATUALIZA SOMENTE A LINHA NECESSÁRIA
+        sheet_produtos.update_cell(
+            linha_planilha,
+            3,
+            nova_qtd
         )
 
+        sheet_produtos.update_cell(
+            linha_planilha,
+            4,
+            novo_total
+        )
+
+        # 🔥 LOG
         sheet_log.append_row([
             str(datetime.now()),
             st.session_state.get("usuario"),
@@ -278,18 +288,16 @@ with col_b:
 
         else:
 
-            # 🔥 REDUZ SOMENTE O SALDO
             nova_qtd = estoque_atual - quantidade
 
-            df.loc[
-                df["produto"] == produto,
-                "quantidade_inicial"
-            ] = nova_qtd
-
-            sheet_produtos.update(
-                [df.columns.tolist()] + df.values.tolist()
+            # 🔥 ATUALIZA SOMENTE A CÉLULA NECESSÁRIA
+            sheet_produtos.update_cell(
+                linha_planilha,
+                3,
+                nova_qtd
             )
 
+            # 🔥 LOG
             sheet_log.append_row([
                 str(datetime.now()),
                 st.session_state.get("usuario"),
