@@ -11,17 +11,22 @@ st.set_page_config(
 )
 
 # ===============================
-# 🎨 CSS FINAL (REMOVE FAIXA + AJUSTA TOPO)
+# 🎨 CSS FINAL
 # ===============================
 st.markdown("""
 <style>
 
-/* 🔥 REMOVE HEADER DO STREAMLIT */
-header {
-    visibility: hidden;
+/* 🔥 REMOVE SOMENTE A FAIXA */
+[data-testid="stHeader"] {
+    background: transparent;
 }
 
-/* 🔥 REMOVE ESPAÇO SUPERIOR */
+/* 🔥 MANTÉM BOTÃO DA SIDEBAR */
+[data-testid="collapsedControl"] {
+    display: block;
+}
+
+/* 🔥 AJUSTA TOPO */
 .block-container {
     padding-top: 20px !important;
 }
@@ -30,10 +35,16 @@ header {
 """, unsafe_allow_html=True)
 
 # 🔥 ESPAÇAMENTO CONTROLADO
-st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='margin-top: 10px;'></div>",
+    unsafe_allow_html=True
+)
 
 # 🔥 LOGO AJUSTADA
-st.image("assets/logo_petiko.png", width=220)
+st.image(
+    "assets/logo_petiko.png",
+    width=220
+)
 
 # ===============================
 # 🔗 CONEXÃO (OTIMIZADA)
