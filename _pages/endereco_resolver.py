@@ -13,7 +13,14 @@ if "logado" not in st.session_state or not st.session_state.logado:
 st.title("🔧 Resolver Atualização de Endereço")
 
 # 🔒 CONTROLE DE PERMISSÃO
-bloqueado_resolucao = st.session_state.get("departamento", "").lower() == "atendimento"
+departamento = (
+    st.session_state.get("departamento", "")
+    .strip()
+    .lower()
+)
+
+# Apenas Atendimento fica bloqueado para finalizar
+bloqueado_resolucao = departamento == "atendimento"
 
 # ===============================
 # 🔗 CONEXÃO
