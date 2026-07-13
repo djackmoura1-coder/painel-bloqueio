@@ -198,14 +198,25 @@ if not pendentes_df.empty:
 
                     st.info("Cancelamento abortado.")
 
-    acao = st.radio(
-        "Ação da ocorrência",
-        [
-            "Bloqueado",
-            "Não bloqueado",
-            "Tratativa com a logística"
-        ]
-    )
+    # 🔒 PERMISSÃO POR DEPARTAMENTO
+departamento = st.session_state.get("departamento", "").lower()
+
+if departamento == "mandae":
+    opcoes = [
+        "Bloqueado",
+        "Não bloqueado"
+    ]
+else:
+    opcoes = [
+        "Bloqueado",
+        "Não bloqueado",
+        "Tratativa com a logística"
+    ]
+
+acao = st.radio(
+    "Ação da ocorrência",
+    opcoes
+)
 
     if bloqueado_resolucao:
         st.warning(
