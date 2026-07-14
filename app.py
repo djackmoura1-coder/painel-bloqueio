@@ -231,10 +231,10 @@ else:
         .lower()
     )
 
-# ===============================
-# 📦 LOGÍSTICA
-# ===============================
-if menu_principal == "Atendimento & Logística":
+    # ===============================
+    # 📦 LOGÍSTICA
+    # ===============================
+    if menu_principal == "Atendimento & Logística":
 
     if departamento in ["mandae", "mandaê"]:
 
@@ -259,10 +259,10 @@ if menu_principal == "Atendimento & Logística":
             ]
         )
 
-# ===============================
-# 📦 ESTOQUE
-# ===============================
-elif menu_principal == "Estoque":
+    # ===============================
+    # 📦 ESTOQUE
+    # ===============================
+    elif menu_principal == "Estoque":
 
     if departamento in ["mandae", "mandaê"]:
         st.error("🚫 Você não possui permissão para acessar este módulo.")
