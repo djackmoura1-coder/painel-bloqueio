@@ -198,9 +198,10 @@ if not st.session_state.logado:
     )
 
     if st.button(
-        "Entrar",
-        use_container_width=True
-    ):
+    "🔐 Entrar",
+    type="primary",
+    use_container_width=True
+):
         usuario_digitado = usuario_digitado.strip()
         senha_digitada = senha_digitada.strip()
 
