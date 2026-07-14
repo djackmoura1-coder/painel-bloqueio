@@ -12,6 +12,35 @@ if "logado" not in st.session_state or not st.session_state.logado:
 
 st.title("🔧 Resolver Atualização de Endereço")
 
+st.markdown("""
+<style>
+
+/* Botão principal */
+div.stButton > button {
+    background: #16a34a;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    border: none;
+    height: 45px;
+    width: 100%;
+    transition: 0.25s;
+}
+
+/* Ao passar o mouse */
+div.stButton > button:hover {
+    background: #15803d;
+    color: white;
+}
+
+/* Ao clicar */
+div.stButton > button:active {
+    background: #166534;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 # 🔒 CONTROLE DE PERMISSÃO
 departamento = (
     st.session_state.get("departamento", "")
