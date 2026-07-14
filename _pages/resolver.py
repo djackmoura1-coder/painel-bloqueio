@@ -15,6 +15,31 @@ if "logado" not in st.session_state or not st.session_state.logado:
 
 st.title("🔧 Resolver Solicitações de Bloqueio")
 
+st.markdown("""
+<style>
+
+/* Todos os botões do Streamlit */
+[data-testid="stButton"] > button {
+    background-color: #16a34a !important;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    height: 46px;
+}
+
+[data-testid="stButton"] > button:hover {
+    background-color: #15803d !important;
+    color: white !important;
+}
+
+[data-testid="stButton"] > button:active {
+    background-color: #166534 !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 # 🔒 CONTROLE DE PERMISSÃO
 bloqueado_resolucao = (
     st.session_state.get("departamento", "").lower()
