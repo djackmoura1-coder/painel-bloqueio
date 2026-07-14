@@ -212,7 +212,7 @@ else:
         unsafe_allow_html=True
     )
 
-    # 🔥 MENU
+        # 🔥 MENU
     st.sidebar.divider()
 
     st.sidebar.subheader("📂 Menu")
@@ -223,6 +223,12 @@ else:
             "Atendimento & Logística",
             "Estoque"
         ]
+    )
+
+    departamento = (
+        st.session_state.get("departamento", "")
+        .strip()
+        .lower()
     )
 
 # ===============================
