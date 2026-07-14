@@ -15,27 +15,23 @@ st.title("🔧 Resolver Atualização de Endereço")
 st.markdown("""
 <style>
 
-/* Botão principal */
-div.stButton > button {
-    background: #16a34a;
-    color: white;
-    font-weight: bold;
+/* Todos os botões do Streamlit */
+[data-testid="stButton"] > button {
+    background-color: #16a34a !important;
+    color: white !important;
+    font-weight: 700;
     border-radius: 8px;
     border: none;
-    height: 45px;
-    width: 100%;
-    transition: 0.25s;
+    height: 46px;
 }
 
-/* Ao passar o mouse */
-div.stButton > button:hover {
-    background: #15803d;
-    color: white;
+[data-testid="stButton"] > button:hover {
+    background-color: #15803d !important;
+    color: white !important;
 }
 
-/* Ao clicar */
-div.stButton > button:active {
-    background: #166534;
+[data-testid="stButton"] > button:active {
+    background-color: #166534 !important;
 }
 
 </style>
