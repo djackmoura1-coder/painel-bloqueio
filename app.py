@@ -231,10 +231,10 @@ else:
         .lower()
     )
 
-    # ===============================
-    # 📦 LOGÍSTICA
-    # ===============================
-    if menu_principal == "Atendimento & Logística":
+# ===============================
+# 📦 LOGÍSTICA
+# ===============================
+if menu_principal == "Atendimento & Logística":
 
     if departamento in ["mandae", "mandaê"]:
 
