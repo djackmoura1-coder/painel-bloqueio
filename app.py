@@ -228,7 +228,25 @@ else:
     # ===============================
     # 📦 LOGÍSTICA
     # ===============================
-    if menu_principal == "Atendimento & Logística":
+    departamento = (
+    st.session_state.get("departamento", "")
+    .strip()
+    .lower()
+)
+
+if menu_principal == "Atendimento & Logística":
+
+    if departamento in ["mandae", "mandaê"]:
+
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Endereço - Resolver",
+                "Bloqueio - Resolver"
+            ]
+        )
+
+    else:
 
         pagina = st.sidebar.radio(
             "Páginas:",
@@ -240,11 +258,24 @@ else:
                 "Previsão de Postagem"
             ]
         )
-
     # ===============================
     # 📦 ESTOQUE
     # ===============================
-    elif menu_principal == "Estoque":
+   elif menu_principal == "Estoque":
+
+    if departamento in ["mandae", "mandaê"]:
+        st.sidebar.info("🚫 Você não possui acesso ao módulo Estoque.")
+        st.stop()
+
+    pagina = st.sidebar.radio(
+        "Páginas:",
+        [
+            "Cadastro de Produtos",
+            "Baixa de Estoque",
+            "Planejamento Operacional",
+            "Contador de Itens"
+        ]
+    )
 
         pagina = st.sidebar.radio(
             "Páginas:",
