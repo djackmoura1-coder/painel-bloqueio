@@ -232,27 +232,10 @@ else:
     )
 
 # ===============================
-# 🔒 DEPARTAMENTO DO USUÁRIO
+# 📦 LOGÍSTICA
 # ===============================
-departamento = (
-    st.session_state.get("departamento", "")
-    .strip()
-    .lower()
-)
+if menu_principal == "Atendimento & Logística":
 
-    
-    # ===============================
-    # 📦 LOGÍSTICA
-    # ===============================
-    departamento = (
-        st.session_state.get("departamento", "")
-        .strip()
-        .lower()
-    )
-
-    if menu_principal == "Atendimento & Logística":
-
-    # Apenas o departamento Mandaê possui menu reduzido
     if departamento in ["mandae", "mandaê"]:
 
         pagina = st.sidebar.radio(
@@ -263,7 +246,6 @@ departamento = (
             ]
         )
 
-    # Todos os demais continuam iguais
     else:
 
         pagina = st.sidebar.radio(
@@ -277,12 +259,11 @@ departamento = (
             ]
         )
 
-    # ===============================
-    # 📦 ESTOQUE
-    # ===============================
-    elif menu_principal == "Estoque":
+# ===============================
+# 📦 ESTOQUE
+# ===============================
+elif menu_principal == "Estoque":
 
-    # Apenas o departamento Mandaê não possui acesso
     if departamento in ["mandae", "mandaê"]:
         st.error("🚫 Você não possui permissão para acessar este módulo.")
         st.stop()
@@ -296,3 +277,5 @@ departamento = (
             "Contador de Itens"
         ]
     )
+
+
