@@ -229,53 +229,44 @@ else:
     # 📦 LOGÍSTICA
     # ===============================
     departamento = (
-    st.session_state.get("departamento", "")
-    .strip()
-    .lower()
-)
+        st.session_state.get("departamento", "")
+        .strip()
+        .lower()
+    )
 
-if menu_principal == "Atendimento & Logística":
+    if menu_principal == "Atendimento & Logística":
 
-    if departamento in ["mandae", "mandaê"]:
+        if departamento in ["mandae", "mandaê"]:
 
-        pagina = st.sidebar.radio(
-            "Páginas:",
-            [
-                "Endereço - Resolver",
-                "Bloqueio - Resolver"
-            ]
-        )
+            pagina = st.sidebar.radio(
+                "Páginas:",
+                [
+                    "Endereço - Resolver",
+                    "Bloqueio - Resolver"
+                ]
+            )
 
-    else:
+        else:
 
-        pagina = st.sidebar.radio(
-            "Páginas:",
-            [
-                "Endereço - Solicitar",
-                "Endereço - Resolver",
-                "Bloqueio - Solicitar",
-                "Bloqueio - Resolver",
-                "Previsão de Postagem"
-            ]
-        )
+            pagina = st.sidebar.radio(
+                "Páginas:",
+                [
+                    "Endereço - Solicitar",
+                    "Endereço - Resolver",
+                    "Bloqueio - Solicitar",
+                    "Bloqueio - Resolver",
+                    "Previsão de Postagem"
+                ]
+            )
+
     # ===============================
     # 📦 ESTOQUE
     # ===============================
-   elif menu_principal == "Estoque":
+    elif menu_principal == "Estoque":
 
-    if departamento in ["mandae", "mandaê"]:
-        st.sidebar.info("🚫 Você não possui acesso ao módulo Estoque.")
-        st.stop()
-
-    pagina = st.sidebar.radio(
-        "Páginas:",
-        [
-            "Cadastro de Produtos",
-            "Baixa de Estoque",
-            "Planejamento Operacional",
-            "Contador de Itens"
-        ]
-    )
+        if departamento in ["mandae", "mandaê"]:
+            st.sidebar.info("🚫 Você não possui acesso ao módulo Estoque.")
+            st.stop()
 
         pagina = st.sidebar.radio(
             "Páginas:",
@@ -285,87 +276,4 @@ if menu_principal == "Atendimento & Logística":
                 "Planejamento Operacional",
                 "Contador de Itens"
             ]
-        )
-
-    # ===============================
-    # 🚀 ABRIR PÁGINAS
-    # ===============================
-    try:
-
-        if pagina == "Endereço - Solicitar":
-
-            exec(
-                open(
-                    "_pages/endereco_solicitar.py"
-                ).read()
-            )
-
-        elif pagina == "Endereço - Resolver":
-
-            exec(
-                open(
-                    "_pages/endereco_resolver.py"
-                ).read()
-            )
-
-        elif pagina == "Bloqueio - Solicitar":
-
-            exec(
-                open(
-                    "_pages/solicitar.py"
-                ).read()
-            )
-
-        elif pagina == "Bloqueio - Resolver":
-
-            exec(
-                open(
-                    "_pages/resolver.py"
-                ).read()
-            )
-
-        elif pagina == "Cadastro de Produtos":
-
-            exec(
-                open(
-                    "_pages/cadastro_produtos.py"
-                ).read()
-            )
-
-        elif pagina == "Baixa de Estoque":
-
-            exec(
-                open(
-                    "_pages/baixa_estoque.py"
-                ).read()
-            )
-
-        elif pagina == "Planejamento Operacional":
-
-            exec(
-                open(
-                    "_pages/planejamento.py"
-                ).read()
-            )
-
-        elif pagina == "Contador de Itens":
-
-            exec(
-                open(
-                    "_pages/contador_itens.py"
-                ).read()
-            )
-
-        elif pagina == "Previsão de Postagem":
-
-            exec(
-                open(
-                    "_pages/previsao_postagem.py"
-                ).read()
-            )
-
-    except Exception as e:
-
-        st.error(
-            f"Erro ao carregar página: {e}"
         )
