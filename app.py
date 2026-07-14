@@ -225,6 +225,16 @@ else:
         ]
     )
 
+# ===============================
+# 🔒 DEPARTAMENTO DO USUÁRIO
+# ===============================
+departamento = (
+    st.session_state.get("departamento", "")
+    .strip()
+    .lower()
+)
+
+    
     # ===============================
     # 📦 LOGÍSTICA
     # ===============================
@@ -236,44 +246,47 @@ else:
 
     if menu_principal == "Atendimento & Logística":
 
-        if departamento in ["mandae", "mandaê"]:
+    # Apenas o departamento Mandaê possui menu reduzido
+    if departamento in ["mandae", "mandaê"]:
 
-            pagina = st.sidebar.radio(
-                "Páginas:",
-                [
-                    "Endereço - Resolver",
-                    "Bloqueio - Resolver"
-                ]
-            )
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Endereço - Resolver",
+                "Bloqueio - Resolver"
+            ]
+        )
 
-        else:
+    # Todos os demais continuam iguais
+    else:
 
-            pagina = st.sidebar.radio(
-                "Páginas:",
-                [
-                    "Endereço - Solicitar",
-                    "Endereço - Resolver",
-                    "Bloqueio - Solicitar",
-                    "Bloqueio - Resolver",
-                    "Previsão de Postagem"
-                ]
-            )
+        pagina = st.sidebar.radio(
+            "Páginas:",
+            [
+                "Endereço - Solicitar",
+                "Endereço - Resolver",
+                "Bloqueio - Solicitar",
+                "Bloqueio - Resolver",
+                "Previsão de Postagem"
+            ]
+        )
 
     # ===============================
     # 📦 ESTOQUE
     # ===============================
     elif menu_principal == "Estoque":
 
-        if departamento in ["mandae", "mandaê"]:
-            st.sidebar.info("🚫 Você não possui acesso ao módulo Estoque.")
-            st.stop()
+    # Apenas o departamento Mandaê não possui acesso
+    if departamento in ["mandae", "mandaê"]:
+        st.error("🚫 Você não possui permissão para acessar este módulo.")
+        st.stop()
 
-        pagina = st.sidebar.radio(
-            "Páginas:",
-            [
-                "Cadastro de Produtos",
-                "Baixa de Estoque",
-                "Planejamento Operacional",
-                "Contador de Itens"
-            ]
-        )
+    pagina = st.sidebar.radio(
+        "Páginas:",
+        [
+            "Cadastro de Produtos",
+            "Baixa de Estoque",
+            "Planejamento Operacional",
+            "Contador de Itens"
+        ]
+    )
